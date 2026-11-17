@@ -295,8 +295,8 @@ function boxHTML(g, kind, cw, r) {
   /* shrink the box until its tilted outline fits inside the cubby */
   const rz = Math.abs(zr) * Math.PI / 180, ry = Math.abs(yr) * Math.PI / 180;
   const outline = () => ({ bw:(w * Math.cos(ry) + d * Math.sin(ry)) * Math.cos(rz) + h * Math.sin(rz), bh:w * Math.sin(rz) + h * Math.cos(rz) });
-  let o = outline(); const fs = Math.min(1, (cw * .84) / o.bw, (cw * .7) / o.bh); w *= fs; h *= fs; d *= fs; o = outline();
-  return { w, h, ex:Math.max(0, (o.bw - w) / 2), drop:Math.max(0, (o.bh - h) / 2) + d * .15, html: cube(w, h, d, { pose, front:`${cover}<span class="basepart"></span><span class="lidline"></span>`, side:`${fitText(g.title, h * .8, d, true)}<span class="basepart"></span><span class="lidline"></span>`, sideCls:'spine v', top:'', topCls:'spine' }) };
+  let o = outline(); const fs = Math.min(1, (cw * (a > 1.1 ? .72 : .8)) / o.bw, (cw * .68) / o.bh); w *= fs; h *= fs; d *= fs; o = outline();
+  return { w, h, ex:Math.max(0, (o.bw - w) / 2), drop:Math.max(0, (o.bh - h) / 2) + d * (.15 + Math.sin(ry) * .9), html: cube(w, h, d, { pose, front:`${cover}<span class="basepart"></span><span class="lidline"></span>`, side:`${fitText(g.title, h * .8, d, true)}<span class="basepart"></span><span class="lidline"></span>`, sideCls:'spine v', top:'', topCls:'spine' }) };
 }
 function junkHTML(r, cw) {
   const out = [], n = Math.floor(r() * 3), cols = ['#b3102b', '#2f5f94', '#2f6b3f', '#e8a93a', '#4a2b5e'];
@@ -326,14 +326,15 @@ function renderShelf() {
   if (!games.length) { status(canEdit ? 'The closet is empty. Use “Add a game” to toss the first box in.' : 'No games in the closet yet. Check back soon!'); return; }
   const wrap = $('#shelves'), fw = wrap.parentElement.clientWidth - 36;
   const cols = fw < 520 ? 2 : fw < 860 ? 3 : 4, gap = 18, cw = (fw - gap * (cols - 1)) / cols;
-  const cubbies = Math.max(cols * 2, Math.ceil(games.length * 1.3 / cols) * cols);
+  /* every game gets its own cubby so its whole cover shows; a few spare cubbies hold clutter */
+  const cubbies = Math.max(cols * 2, Math.ceil(games.length * 1.2 / cols) * cols);
   const order = [...games].sort((a, b) => hash(a.id) - hash(b.id));
   const slots = [...Array(cubbies)].map(() => []);
   const r0 = rng(hash('closet' + cubbies));
   const spots = [...Array(cubbies).keys()].sort(() => r0() - .5);
   order.forEach((g, i) => {
     let c = spots[i % cubbies];
-    if (i >= Math.ceil(cubbies * .7) || (r0() < .25 && i > 0)) { const full = spots.filter(s => slots[s].length && slots[s].length < 3); if (full.length) c = full[Math.floor(r0() * full.length)]; }
+    if (false) { const full = spots.filter(s => slots[s].length && slots[s].length < 3); if (full.length) c = full[Math.floor(r0() * full.length)]; }
     slots[c].push(g);
   });
   const grid = document.createElement('div'); grid.className = 'cubbies'; grid.style.setProperty('--cols', cols);
