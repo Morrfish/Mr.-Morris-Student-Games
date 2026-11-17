@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shut the Box</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{ --gold:#e8a93a; --cream:#f6efe1; --ink:#1d1719; --felt:#1f6a48; color-scheme:dark; }
+*,*::before,*::after{ box-sizing:border-box; }
+html,body{ margin:0; height:100%; }
+body{ font-family:Nunito, system-ui, sans-serif; color:var(--cream); background:radial-gradient(ellipse at 50% 30%, #4a3020, #160d07 80%); display:flex; flex-direction:column; overflow:hidden; }
+button{ font:inherit; cursor:pointer; }
+[hidden]{ display:none !important; }
+:focus-visible{ outline:3px solid var(--gold); outline-offset:2px; }
+.btn{ border:2px solid var(--cream); background:transparent; color:var(--cream); border-radius:12px; padding:9px 16px; font-weight:900; }
+.btn.primary{ background:var(--gold); border-color:var(--gold); color:var(--ink); }
+.btn[aria-pressed="true"]{ background:var(--cream); color:var(--ink); }
+.btn:disabled{ opacity:.4; cursor:default; }
+h1{ font-family:Bungee, Impact, sans-serif; font-weight:400; margin:0; font-size:22px; margin-right:auto; }
+.top{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 14px; background:rgba(0,0,0,.4); position:relative; z-index:10; }
+.main{ flex:1; min-height:0; display:flex; }
+#stage{ flex:1; min-width:0; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:16px; }
+#box{ position:relative; width:min(860px, 100%); border-radius:22px; padding:22px 22px 26px; background:linear-gradient(180deg, #9b6a3c, #7a4f2a); box-shadow:inset 0 0 0 6px #5c3a1c, inset 0 2px 0 rgba(255,255,255,.2), 0 30px 60px rgba(0,0,0,.55); }
+#box::before{ content:""; position:absolute; inset:0; border-radius:22px; background:repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 3px, transparent 3px 40px); pointer-events:none; }
+.tiles{ position:relative; display:grid; grid-template-columns:repeat(var(--n,9), 1fr); gap:6px; padding:0 4px 14px; perspective:900px; }
+.tile{ position:relative; height:clamp(80px, 14vh, 130px); border:0; padding:0; background:none; transform-style:preserve-3d; transform-origin:50% 100%; transition:transform .45s cubic-bezier(.4,.1,.3,1.3); }
+.tile .tf{ position:absolute; inset:0; border-radius:8px 8px 3px 3px; background:linear-gradient(180deg, #f8efd9, #e7d5ae); color:#2a1a0e; display:flex; align-items:center; justify-content:center; font-family:Bungee, Impact, sans-serif; font-size:clamp(26px, 4.4vw, 46px); box-shadow:inset 0 -6px 0 rgba(0,0,0,.12), 0 6px 0 #4b2f16; backface-visibility:hidden; }
+.tile .tb{ position:absolute; inset:0; border-radius:3px 3px 8px 8px; background:linear-gradient(180deg, #5c3a1c, #4b2f16); transform:rotateX(180deg); backface-visibility:hidden; }
+.tile.sel .tf{ background:linear-gradient(180deg, #ffe7a6, #f2c35a); box-shadow:inset 0 -6px 0 rgba(0,0,0,.12), 0 6px 0 #4b2f16, 0 0 0 4px var(--gold); }
+.tile.shut{ transform:rotateX(-100deg); cursor:default; }
+.tile:not(.shut):not(:disabled):hover .tf{ filter:brightness(1.05); }
+.tile:disabled{ cursor:default; }
+.tray{ position:relative; border-radius:14px; background:radial-gradient(ellipse at 50% 40%, #2a8a5e, var(--felt) 70%); box-shadow:inset 0 0 0 6px #5c3a1c, inset 0 10px 24px rgba(0,0,0,.45); min-height:clamp(150px, 26vh, 230px); display:flex; align-items:center; justify-content:center; gap:40px; }
+.die{ --s:clamp(62px, 9vw, 86px); width:var(--s); height:var(--s); border-radius:calc(var(--s) * .2); background:#fffdf6; display:grid; grid-template:repeat(3,1fr)/repeat(3,1fr); padding:calc(var(--s) * .14); box-shadow:0 6px 0 #c7bca6, 0 12px 18px rgba(0,0,0,.45); }
+.die i{ border-radius:50%; background:#1d1719; margin:calc(var(--s) * .035); visibility:hidden; } .die i.on{ visibility:visible; }
+.die.roll{ animation:tumble .6s cubic-bezier(.3,.7,.2,1); }
+@keyframes tumble{ 0%{ transform:translate(-160px,-60px) rotate(-540deg); } 70%{ transform:translate(6px,4px) rotate(10deg); } 100%{ transform:none; } }
+.die.gone{ visibility:hidden; }
+.need{ position:absolute; right:16px; top:12px; font-weight:900; font-size:15px; padding:4px 12px; border-radius:999px; background:rgba(0,0,0,.35); }
+.side{ width:290px; overflow:auto; padding:14px; display:flex; flex-direction:column; gap:12px; background:rgba(0,0,0,.28); }
+.panel{ background:rgba(0,0,0,.3); border-radius:14px; padding:12px; }
+.msg{ font-weight:900; font-size:18px; min-height:52px; }
+.acts{ display:flex; flex-direction:column; gap:8px; }
+.who{ display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-radius:10px; font-weight:800; }
+.who.cur{ background:var(--gold); color:var(--ink); }
+.who small{ font-weight:700; opacity:.8; }
+.rules{ font-size:14px; line-height:1.45; }
+.ov{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.62); z-index:40; padding:16px; }
+.ov.on{ display:flex; }
+.ov .panel{ background:#2a1c12; padding:24px; max-width:480px; width:100%; display:flex; flex-direction:column; gap:12px; align-items:center; text-align:center; max-height:92vh; overflow:auto; }
+.ov h2{ font-family:Bungee, Impact, sans-serif; font-weight:400; margin:0; font-size:30px; }
+.row{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+.slot{ display:flex; gap:8px; width:100%; align-items:center; flex-wrap:wrap; }
+.slot input{ flex:1 1 150px; min-width:0; font:inherit; font-weight:800; padding:8px 10px; border-radius:10px; border:1px solid #6b5a48; background:#160d07; color:var(--cream); }
+.board{ width:100%; display:flex; flex-direction:column; gap:4px; }
+.board div{ display:flex; justify-content:space-between; padding:6px 10px; border-radius:8px; background:rgba(255,255,255,.06); font-weight:800; }
+.toast{ position:fixed; left:50%; top:38%; transform:translate(-50%,-50%) scale(.6); z-index:50; font-family:Bungee, Impact, sans-serif; font-size:clamp(34px,7vw,72px); color:#fff; text-shadow:0 4px 0 #b3102b, 0 8px 20px rgba(0,0,0,.6); opacity:0; pointer-events:none; transition:transform .3s cubic-bezier(.3,1.6,.5,1), opacity .25s; white-space:nowrap; }
+.toast.on{ opacity:1; transform:translate(-50%,-50%) scale(1); }
+@media (max-width:860px){ .main{ flex-direction:column; overflow:auto; } #stage{ flex:none; } .side{ width:100%; } .tiles{ gap:3px; } }
+@media (prefers-reduced-motion: reduce){ .tile{ transition:none; } .die.roll{ animation:none; } }
+</style>
+</head>
+<body>
+<div class="top"><h1>Shut the Box</h1><button class="btn" id="sndBtn" aria-pressed="true">Sound on</button><button class="btn" id="rulesBtn">Rules</button><button class="btn primary" id="newg">New game</button></div>
+<div class="main">
+  <main id="stage">
+    <div id="box">
+      <div class="tiles" id="tiles" role="group" aria-label="Number tiles"></div>
+      <div class="tray" id="tray"><span class="need" id="need"></span><div class="die" id="d1"></div><div class="die" id="d2"></div></div>
+    </div>
+  </main>
+  <aside class="side">
+    <div class="panel msg" id="msg" aria-live="polite"></div>
+    <div class="acts" id="acts"></div>
+    <div class="panel"><b id="scoreHead">Scores</b><div id="scores" style="display:flex;flex-direction:column;gap:4px;margin-top:8px"></div></div>
+    <div class="panel rules"><b>How to play</b><br>Roll the dice, then flip down any open tiles that add up to your roll (a 9 could be 9, 4+5, or 1+3+5). Keep rolling until you can’t make the number. Your score is the tiles left standing, so <b>low is good</b>. Flip every tile and you <b>Shut the Box</b> for a perfect 0! Once 7, 8 and 9 are down, you may roll just one die.</div>
+  </aside>
+</div>
+<div class="toast" id="toast"></div>
+<div class="ov on" id="setupOv" role="dialog" aria-modal="true" aria-labelledby="setupT"><div class="panel">
+  <h2 id="setupT">Shut the Box</h2>
+  <p>Roll the dice, flip the tiles, and try to shut every one. Lowest score wins.</p>
+  <div class="row" id="cntRow"></div>
+  <div id="slots" style="width:100%;display:flex;flex-direction:column;gap:8px"></div>
+  <div class="row" id="tileRow"></div>
+  <div class="row" id="rndRow"></div>
+  <button class="btn primary" id="goBtn">Open the box</button>
+</div></div>
+<div class="ov" id="endOv" role="dialog" aria-modal="true" aria-labelledby="endT"><div class="panel"><h2 id="endT"></h2><p id="endP"></p><div class="board" id="endBoard"></div><div class="row"><button class="btn primary" id="againBtn">Play again</button><button class="btn" id="changeBtn">Change players</button></div></div></div>
+<script>
+const $ = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const rnd = n => Math.floor(Math.random() * n);
+const PIP = { 1:[4], 2:[0,8], 3:[0,4,8], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8] };
+const showDie = (el, v) => { el.innerHTML = [...Array(9)].map((_, i) => `<i class="${v && PIP[v].includes(i) ? 'on' : ''}"></i>`).join(''); el.setAttribute('aria-label', v ? `Die showing ${v}` : 'Die'); };
+let cfg = { n:2, tiles:9, rounds:3, bots:[false, true, true, true] }; try { Object.assign(cfg, JSON.parse(localStorage.getItem('stb-cfg') || '{}')); } catch (e) {}
+let G = null, run = 0, sound = true; try { sound = localStorage.getItem('stb-snd') !== 'off'; } catch (e) {}
+let AC; function tone(f, d = .08, type = 'triangle', v = .07) { if (!sound) return; try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(v, AC.currentTime); g.gain.exponentialRampToValueAtTime(.001, AC.currentTime + d); o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime + d + .02); } catch (e) {} }
+const clack = () => { tone(260, .06, 'square', .05); setTimeout(() => tone(180, .08, 'triangle'), 40); };
+const rattle = () => { for (let k = 0; k < 6; k++) setTimeout(() => tone(800 + rnd(900), .03, 'square', .04), k * 50); };
+function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('on'), 1300); }
+$('#sndBtn').onclick = () => { sound = !sound; try { localStorage.setItem('stb-snd', sound ? 'on' : 'off'); } catch (e) {} paintSnd(); };
+const paintSnd = () => { $('#sndBtn').setAttribute('aria-pressed', sound); $('#sndBtn').textContent = sound ? 'Sound on' : 'Sound off'; }; paintSnd();
+
+/* ---------- setup ---------- */
+const NAMES = ['Lucky Lou', 'Dicey Di', 'Boxcar Bo'];
+function seg(id, items, key) { $(id).innerHTML = items.map(([v, l]) => `<button class="btn" data-v="${v}" aria-pressed="${cfg[key] == v}">${l}</button>`).join(''); $(id).querySelectorAll('button').forEach(b => b.onclick = () => { cfg[key] = +b.dataset.v; setup(); }); }
+function setup() {
+  run++;
+  seg('#cntRow', [[1, 'Solo'], [2, '2 players'], [3, '3 players'], [4, '4 players']], 'n');
+  seg('#tileRow', [[9, 'Tiles 1–9'], [12, 'Tiles 1–12']], 'tiles');
+  seg('#rndRow', [[1, '1 round'], [3, '3 rounds'], [5, '5 rounds']], 'rounds');
+  $('#slots').innerHTML = [...Array(cfg.n)].map((_, i) => `<div class="slot"><input value="${i === 0 ? 'You' : cfg.bots[i] ? NAMES[i - 1] : 'Player ' + (i + 1)}" data-i="${i}" aria-label="Player ${i + 1} name"><span class="row"><button class="btn" data-i="${i}" data-b="0" aria-pressed="${!cfg.bots[i]}">Player</button><button class="btn" data-i="${i}" data-b="1" aria-pressed="${cfg.bots[i]}" ${i === 0 ? 'disabled' : ''}>Computer</button></span></div>`).join('');
+  $('#slots').querySelectorAll('[data-b]').forEach(b => b.onclick = () => { cfg.bots[+b.dataset.i] = b.dataset.b === '1'; setup(); });
+  $('#setupOv').classList.add('on'); $('#goBtn').focus();
+}
+$('#goBtn').onclick = () => {
+  try { localStorage.setItem('stb-cfg', JSON.stringify(cfg)); } catch (e) {}
+  const names = [...$('#slots').querySelectorAll('input')].map((x, i) => x.value.trim() || 'Player ' + (i + 1));
+  $('#setupOv').classList.remove('on');
+  start(names.map((n, i) => ({ name:n, bot:i > 0 && cfg.bots[i], scores:[] })));
+};
+$('#newg').onclick = setup; $('#changeBtn').onclick = () => { $('#endOv').classList.remove('on'); setup(); };
+$('#againBtn').onclick = () => { $('#endOv').classList.remove('on'); start(G.players.map(p => ({ ...p, scores:[] }))); };
+$('#rulesBtn').onclick = () => { const r = document.querySelector('.rules'); r.scrollIntoView({ behavior:'smooth', block:'center' }); r.animate([{ outline:'3px solid #e8a93a' }, { outline:'3px solid transparent' }], 1600); };
+
+/* ---------- game ---------- */
+function start(players) { run++; G = { players, round:1, turn:0, N:cfg.tiles, rounds:cfg.rounds, run }; newTurn(); }
+const cur = () => G.players[G.turn];
+const openTiles = () => G.open.map((o, i) => o ? i + 1 : 0).filter(Boolean);
+const left = () => openTiles().reduce((s, v) => s + v, 0);
+const oneDieOK = () => { const big = G.N === 9 ? [7, 8, 9] : [7, 8, 9, 10, 11, 12]; return big.every(v => !G.open[v - 1]); };
+function combos(target, tiles = openTiles()) { const out = []; const go = (i, sum, pick) => { if (sum === target) { out.push(pick.slice()); return; } for (let k = i; k < tiles.length; k++) { if (sum + tiles[k] > target) continue; pick.push(tiles[k]); go(k + 1, sum + tiles[k], pick); pick.pop(); } }; go(0, 0, []); return out; }
+function newTurn() {
+  G.open = Array(G.N).fill(true); G.roll = 0; G.sel = new Set(); G.dice = [0, 0]; G.phase = 'roll';
+  showDie($('#d1'), 0); showDie($('#d2'), 0); $('#d2').classList.remove('gone');
+  render(); const p = cur();
+  say(`${p.name}${p.name === 'You' ? '' : '’s'} turn${G.rounds > 1 ? ` · round ${G.round} of ${G.rounds}` : ''}. Roll the dice!`);
+  if (p.bot) botTurn(G.run);
+}
+async function roll(one) {
+  if (G.phase !== 'roll') return; G.phase = 'busy'; render();
+  const a = 1 + rnd(6), b = one ? 0 : 1 + rnd(6);
+  $('#d2').classList.toggle('gone', !!one);
+  ['#d1', '#d2'].forEach(s => { const e = $(s); e.classList.remove('roll'); void e.offsetWidth; e.classList.add('roll'); });
+  rattle();
+  for (let k = 0; k < 6; k++) { showDie($('#d1'), 1 + rnd(6)); if (!one) showDie($('#d2'), 1 + rnd(6)); await sleep(80); }
+  showDie($('#d1'), a); if (!one) showDie($('#d2'), b);
+  G.dice = [a, b]; G.roll = a + b; G.sel = new Set();
+  await sleep(250);
+  if (!combos(G.roll).length) return endTurn();
+  G.phase = 'pick'; render();
+  say(cur().bot ? `${cur().name} rolled ${G.roll}.` : `You rolled ${G.roll}. Tap tiles that add up to ${G.roll}.`);
+}
+async function shut(list) {
+  if (G.phase !== 'pick') return;
+  if (list.reduce((s, v) => s + v, 0) !== G.roll) return;
+  G.phase = 'busy';
+  for (const v of list.sort((a, b) => b - a)) { G.open[v - 1] = false; G.sel.delete(v); clack(); render(); await sleep(260); }
+  if (window.__cam) window.__cam.focusEl($('#tiles'), 1.25, 900);
+  if (left() === 0) { toast('SHUT THE BOX!'); tone(523, .15); setTimeout(() => tone(659, .15), 140); setTimeout(() => tone(784, .15), 280); setTimeout(() => tone(1046, .35), 420); await sleep(900); return endTurn(true); }
+  G.phase = 'roll'; render();
+  say(`${cur().bot ? cur().name : 'You'} shut ${list.join(' + ')}. ${left()} left standing. Roll again!`);
+  if (cur().bot) botTurn(G.run);
+}
+async function endTurn(perfect) {
+  const p = cur(), sc = left(); p.scores.push(sc); G.phase = 'done'; render();
+  if (!perfect) { say(`No tiles add up to ${G.roll}. ${p.name === 'You' ? 'Your' : p.name + '’s'} turn is over with ${sc} points standing.`); tone(200, .3, 'sawtooth', .05); }
+  else say(`${p.name === 'You' ? 'You' : p.name} shut the box! A perfect 0.`);
+  await sleep(perfect ? 1500 : 2300); if (!G || G.run !== run) return;
+  G.turn++;
+  if (G.turn >= G.players.length) { G.turn = 0; G.round++; }
+  if (G.round > G.rounds) return gameOver();
+  newTurn();
+}
+function total(p) { return p.scores.reduce((s, v) => s + v, 0); }
+function gameOver() {
+  G.phase = 'over'; render();
+  const order = [...G.players].sort((a, b) => total(a) - total(b)), best = order[0], tie = order.filter(p => total(p) === total(best)).length > 1;
+  const solo = G.players.length === 1;
+  $('#endT').textContent = solo ? (total(best) === 0 ? 'Perfect game!' : 'Game over') : tie ? 'It’s a tie!' : best.name === 'You' ? 'You win!' : `${best.name} wins!`;
+  $('#endP').textContent = solo ? `Your total is ${total(best)}. Try to beat it!` : `Lowest total wins. ${tie ? 'Tied at' : best.name + ' finished with'} ${total(best)}.`;
+  let bestSolo = null;
+  if (solo) { const k = 'stb-best-' + G.N + '-' + G.rounds; try { const prev = localStorage.getItem(k); if (prev === null || total(best) < +prev) { localStorage.setItem(k, total(best)); if (prev !== null) $('#endP').textContent += ' New personal best!'; bestSolo = total(best); } else bestSolo = +prev; } catch (e) {} }
+  $('#endBoard').innerHTML = order.map(p => `<div><span>${p.name}</span><span>${p.scores.join(' + ')}${p.scores.length > 1 ? ' = ' + total(p) : ''}</span></div>`).join('') + (solo && bestSolo !== null ? `<div><span>Your best</span><span>${bestSolo}</span></div>` : '');
+  setTimeout(() => $('#endOv').classList.add('on'), 400); tone(523, .2); setTimeout(() => tone(784, .3), 180);
+}
+function say(t) { $('#msg').textContent = t; }
+
+/* ---------- computer player ---------- */
+// look ahead: pick the tiles that give the best chance of surviving the next roll, then the lowest score
+const P2 = (() => { const p = {}; for (let a = 1; a <= 6; a++) for (let b = 1; b <= 6; b++) p[a + b] = (p[a + b] || 0) + 1 / 36; return p; })();
+function botChoose() {
+  const opts = combos(G.roll);
+  let best = null, bs = -1e9;
+  for (const c of opts) {
+    const rest = openTiles().filter(v => !c.includes(v)), sum = rest.reduce((s, v) => s + v, 0);
+    let surv = 0; if (!rest.length) surv = 99; else for (const [t, pr] of Object.entries(P2)) if (combos(+t, rest).length) surv += pr;
+    const s = surv * 40 - sum + Math.max(...c) * .5 - c.length * .3;
+    if (s > bs) { bs = s; best = c; }
+  }
+  return best;
+}
+async function botTurn(r) {
+  await sleep(900); if (!G || G.run !== r) return;
+  if (G.phase === 'roll') { const one = oneDieOK() && left() <= 6; await roll(one); }
+  if (!G || G.run !== r || G.phase !== 'pick') return;
+  const c = botChoose(); await sleep(500);
+  for (const v of c) { G.sel.add(v); render(); tone(600, .04); await sleep(300); }
+  await sleep(300); if (!G || G.run !== r) return; shut(c);
+}
+
+/* ---------- render ---------- */
+function render() {
+  if (!G) return;
+  const t = $('#tiles'); t.style.setProperty('--n', G.N); const me = !cur().bot && G.phase === 'pick';
+  if (t.children.length !== G.N) t.innerHTML = [...Array(G.N)].map((_, i) => `<button class="tile" data-v="${i + 1}"><span class="tf">${i + 1}</span><span class="tb"></span></button>`).join('');
+  [...t.children].forEach((b, i) => { const v = i + 1, open = G.open[i];
+    b.classList.toggle('shut', !open); b.classList.toggle('sel', G.sel.has(v)); b.disabled = !open || !me;
+    b.setAttribute('aria-label', `Tile ${v}${open ? '' : ', shut'}${G.sel.has(v) ? ', picked' : ''}`); b.setAttribute('aria-pressed', G.sel.has(v));
+    b.onclick = () => { if (b.disabled) return; G.sel.has(v) ? G.sel.delete(v) : G.sel.add(v); tone(G.sel.has(v) ? 700 : 500, .04); render(); }; });
+  const selSum = [...G.sel].reduce((s, v) => s + v, 0);
+  $('#need').textContent = G.phase === 'pick' ? `Roll ${G.roll} · picked ${selSum}` : `${left()} standing`;
+  const a = $('#acts'); a.innerHTML = '';
+  const add = (label, fn, primary, dis) => { const b = document.createElement('button'); b.className = 'btn' + (primary ? ' primary' : ''); b.textContent = label; b.disabled = !!dis; b.onclick = fn; a.appendChild(b); };
+  if (!cur().bot && G.phase === 'roll') { add('Roll two dice', () => roll(false), true); if (oneDieOK()) add('Roll one die', () => roll(true)); }
+  if (me) { add(selSum === G.roll ? `Shut ${[...G.sel].sort((x, y) => x - y).join(' + ')}` : `Pick tiles that add to ${G.roll}`, () => shut([...G.sel]), true, selSum !== G.roll); if (G.sel.size) add('Clear picks', () => { G.sel.clear(); render(); }); }
+  $('#scoreHead').textContent = G.rounds > 1 ? `Scores · round ${Math.min(G.round, G.rounds)} of ${G.rounds}` : 'Scores';
+  $('#scores').innerHTML = G.players.map((p, i) => `<div class="who${i === G.turn && G.phase !== 'over' ? ' cur' : ''}"><span>${p.name}${p.bot ? ' <small>(computer)</small>' : ''}</span><span>${total(p)}</span></div>`).join('') + '<small>Lowest total wins</small>';
+}
+document.addEventListener('keydown', e => { if (!G || $('.ov.on')) return; if (e.key === 'Enter' || e.key === ' ') { const b = $('#acts .btn.primary'); if (b && !b.disabled && document.activeElement.tagName !== 'BUTTON') { e.preventDefault(); b.click(); } } const n = +e.key; if (n >= 1 && n <= 9) { const t = $(`#tiles [data-v="${n}"]`); if (t) t.click(); } });
+showDie($('#d1'), 5); showDie($('#d2'), 2);
+setup();
+</script>
+<script>window.__V3 = { key:'shutbox', top:'.top', before:'#newg', stage:'#stage', target:'#box', tilt:42, spin:true, followable:true, focusZoom:1.25, preserve:['.tiles', '.tile'], extraCss:'.is3d #box .die{ transform:translateZ(4px); box-shadow:0 3px 0 #ddd3bd, 0 6px 0 #c7bca6, 0 9px 0 #b3a78f, 0 16px 18px rgba(0,0,0,.45); } .is3d .tiles{ transform:translateZ(1px); } .is3d .tile:not(.shut){ transform:rotateX(-58deg); } .is3d .tile.shut{ transform:rotateX(-100deg) translateZ(-1px); }' };</script>
+<script>
+/* 3D view, follow camera and zoom add-on. Config: window.__V3 */
+(function () {
+  const C = window.__V3, root = document.documentElement;
+  const st = { on:false, tilt:C.tilt || 50, spin:0, zoom:1, follow:true };
+  try { Object.assign(st, JSON.parse(localStorage.getItem('v3-' + C.key) || '{}')); } catch (e) {}
+  st.zoom = Math.max(1, Math.min(3, st.zoom || 1));
+  const cam = { z:1, x:null, y:null, px:0, py:0 };
+  const TF = C.transform || 'translate(var(--px, 0px), var(--py, 0px)) scale(var(--zoom, 1)) rotateX(var(--tilt, 0deg)) rotateZ(var(--spin, 0deg)) translate(var(--cx, 0px), var(--cy, 0px))';
+  const css = document.createElement('style');
+  css.textContent = `
+${C.stage}{ perspective:${C.persp || 1700}px; perspective-origin:50% ${C.originY || '35%'}; }
+${C.target}{ transform-style:preserve-3d; transition:transform .75s cubic-bezier(.3,.7,.2,1); transform:${TF}; }
+${C.target}.v3-follow{ transition:transform .5s ease-out; }
+${(C.preserve || []).length ? C.preserve.join(',') + '{ transform-style:preserve-3d; }' : ''}
+${C.billboard ? `${C.billboard}{ transform:rotateZ(calc(var(--spin, 0deg) * -1)) rotateX(calc(var(--tilt, 0deg) * -1)); transform-origin:${C.bbOrigin || '50% 90%'}; }` : ''}
+.v3-drag ${C.target}, .v3-drag ${C.billboard || '.__none'}{ transition:none !important; }
+${C.extraCss || ''}
+@media (prefers-reduced-motion: reduce){ ${C.target}{ transition:none !important; } }`;
+  document.head.appendChild(css);
+  const bar = document.querySelector(C.top), where = C.before ? bar.querySelector(C.before) : null;
+  const mk = (label, aria) => { const b = document.createElement('button'); b.className = C.btnClass || 'btn'; b.textContent = label; if (aria) b.setAttribute('aria-label', aria); (where ? bar.insertBefore(b, where) : bar.appendChild(b)); return b; };
+  const tgl = mk('3D view'), rl = mk('⟲', 'Rotate left'), rr = mk('⟳', 'Rotate right');
+  const zo = mk('−', 'Zoom out'), zi = mk('+', 'Zoom in');
+  const fol = C.followable ? mk('Follow camera') : null;
+  const tgt = () => document.querySelector(C.target);
+  function setVars() {
+    const el = tgt(); if (!el) return;
+    const z = Math.max(st.zoom, cam.z);
+    root.style.setProperty('--tilt', st.on ? st.tilt + 'deg' : '0deg');
+    root.style.setProperty('--spin', st.on && C.spin ? st.spin + 'deg' : '0deg');
+    root.style.setProperty('--zoom', z);
+    const w = el.offsetWidth, h = el.offsetHeight;
+    const fx = cam.x == null ? w / 2 : cam.x, fy = cam.y == null ? h / 2 : cam.y;
+    root.style.setProperty('--cx', (w / 2 - fx) + 'px'); root.style.setProperty('--cy', (h / 2 - fy) + 'px');
+    root.style.setProperty('--px', cam.px + 'px'); root.style.setProperty('--py', cam.py + 'px');
+  }
+  function apply() {
+    root.classList.toggle('is3d', st.on);
+    tgl.textContent = st.on ? '2D view' : '3D view'; tgl.setAttribute('aria-pressed', st.on);
+    rl.hidden = rr.hidden = !(st.on && C.spin);
+    if (fol) { fol.setAttribute('aria-pressed', st.follow); fol.textContent = st.follow ? 'Follow camera: on' : 'Follow camera: off'; }
+    zo.disabled = st.zoom <= 1; zi.disabled = st.zoom >= 3;
+    try { localStorage.setItem('v3-' + C.key, JSON.stringify(st)); } catch (e) {}
+    setVars(); if (C.onChange) C.onChange(st);
+  }
+  tgl.onclick = () => { st.on = !st.on; apply(); };
+  rl.onclick = () => { st.spin -= 45; apply(); };
+  rr.onclick = () => { st.spin += 45; apply(); };
+  zi.onclick = () => { st.zoom = Math.min(3, +(st.zoom + .25).toFixed(2)); apply(); };
+  zo.onclick = () => { st.zoom = Math.max(1, +(st.zoom - .25).toFixed(2)); if (st.zoom === 1) { cam.px = cam.py = 0; } apply(); };
+  if (fol) fol.onclick = () => { st.follow = !st.follow; if (!st.follow) api.wide(); apply(); };
+  function localPos(el) {
+    const T = tgt(); let x = el.offsetWidth / 2, y = el.offsetHeight / 2, n = el;
+    while (n && n !== T) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; if (n && !T.contains(n) && n !== T) break; }
+    return [x, y];
+  }
+  let backT = null;
+  const api = window.__cam = {
+    focus(x, y, z, follow) { if (!st.follow || !C.followable) return; clearTimeout(backT); cam.x = x; cam.y = y; cam.z = z || C.focusZoom || 1.8; tgt().classList.toggle('v3-follow', !!follow); setVars(); },
+    focusEl(el, z, back) { if (!el || !st.follow || !C.followable) return; const [x, y] = localPos(el); api.focus(x, y, z); if (back) { clearTimeout(backT); backT = setTimeout(api.wide, back); } },
+    wide() { clearTimeout(backT); cam.x = cam.y = null; cam.z = 1; const el = tgt(); if (el) el.classList.remove('v3-follow'); setVars(); },
+    state:st, cam,
+    pan(px, py) { cam.px = px; cam.py = py; setVars(); },
+    zoomBy(dz) { st.zoom = Math.max(1, Math.min(3, +(st.zoom + dz).toFixed(2))); if (st.zoom === 1) cam.px = cam.py = 0; apply(); }
+  };
+  if (C.drag) {
+    const stage = document.querySelector(C.stage); let d = null;
+    stage.addEventListener('pointerdown', e => { if (!st.on || e.target.closest('button, input, .no-orbit')) return; d = { x:e.clientX, y:e.clientY, spin:st.spin, tilt:st.tilt }; stage.setPointerCapture(e.pointerId); root.classList.add('v3-drag'); });
+    stage.addEventListener('pointermove', e => { if (!d) return; if (C.spin) st.spin = d.spin + (e.clientX - d.x) * .35; st.tilt = Math.max(20, Math.min(68, d.tilt - (e.clientY - d.y) * .2)); apply(); });
+    const end = () => { if (d) { d = null; root.classList.remove('v3-drag'); apply(); } };
+    stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  }
+  window.__v3 = st;
+  new ResizeObserver(setVars).observe(document.body);
+  apply();
+})();
+
+</script>
+</body>
+</html>
