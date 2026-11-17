@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Marbles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{ --gold:#e8a93a; --cream:#f6efe1; color-scheme:dark; }
+*,*::before,*::after{ box-sizing:border-box; }
+html,body{ margin:0; height:100%; }
+body{ font-family:Nunito, system-ui, sans-serif; color:var(--cream); background:radial-gradient(ellipse at 50% 35%, #4a3a26, #15100a 80%); display:flex; flex-direction:column; overflow:hidden; }
+button{ font:inherit; cursor:pointer; }
+[hidden]{ display:none !important; }
+:focus-visible{ outline:3px solid var(--gold); outline-offset:2px; }
+.btn{ border:2px solid var(--cream); background:transparent; color:var(--cream); border-radius:12px; padding:9px 16px; font-weight:900; }
+.btn.primary{ background:var(--gold); border-color:var(--gold); color:#1d1719; }
+.btn[aria-pressed="true"]{ background:var(--cream); color:#1d1719; }
+h1{ font-family:Bungee, Impact, sans-serif; font-weight:400; margin:0; font-size:22px; margin-right:auto; }
+.top{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 14px; background:rgba(0,0,0,.4); position:relative; z-index:10; }
+.main{ flex:1; min-height:0; display:flex; }
+.stage{ flex:1; min-width:0; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; touch-action:none; }
+.scaler{ width:900px; height:900px; flex:none; position:relative; transform:scale(var(--s,.7)); }
+#ground{ position:absolute; inset:0; border-radius:40px; background:radial-gradient(circle at 50% 50%, #b48a58, #8f6739 70%, #6f4d29); box-shadow:inset 0 0 60px rgba(0,0,0,.35), 0 30px 50px rgba(0,0,0,.5); }
+#ground::before{ content:""; position:absolute; inset:0; border-radius:40px; background:repeating-radial-gradient(circle at 30% 40%, rgba(0,0,0,.04) 0 3px, transparent 3px 9px); }
+#c{ position:absolute; inset:0; width:900px; height:900px; }
+.side{ width:270px; overflow:auto; padding:14px; display:flex; flex-direction:column; gap:12px; background:rgba(0,0,0,.28); }
+.panel{ background:rgba(0,0,0,.3); border-radius:14px; padding:12px; }
+.who{ display:flex; gap:8px; align-items:center; padding:8px 10px; border-radius:10px; font-weight:800; }
+.who.cur{ outline:3px solid var(--gold); }
+.who i{ width:18px; height:18px; border-radius:50%; flex:none; }
+.msg{ font-weight:900; font-size:17px; min-height:48px; }
+.rules{ font-size:14px; line-height:1.45; }
+.ov{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:40; padding:20px; }
+.ov.on{ display:flex; }
+.ov .panel{ background:#2a2014; padding:24px; max-width:460px; width:100%; display:flex; flex-direction:column; gap:12px; align-items:center; text-align:center; }
+.ov h2{ font-family:Bungee, Impact, sans-serif; font-weight:400; margin:0; font-size:30px; }
+.slot{ display:flex; gap:8px; width:100%; align-items:center; flex-wrap:wrap; } .slot i{ width:22px; height:22px; border-radius:50%; flex:none; }
+.slot input{ flex:1 1 140px; min-width:0; font:inherit; font-weight:800; padding:8px 10px; border-radius:10px; border:1px solid #6b5a48; background:#15100a; color:var(--cream); }
+@media (max-width:860px){ .main{ flex-direction:column; } .stage{ height:62vh; flex:none; } .side{ width:100%; } }
+</style>
+</head>
+<body>
+<div class="top"><h1>Marbles</h1><button class="btn primary" id="newg">New game</button></div>
+<div class="main">
+  <main class="stage" id="stage"><div class="scaler" id="scaler"><div id="ground"><canvas id="c" width="900" height="900" aria-label="Marble ring"></canvas></div></div></main>
+  <aside class="side">
+    <div class="panel msg" id="msg" aria-live="polite"></div>
+    <div class="panel"><b>Marbles won</b><div id="score" style="display:flex;flex-direction:column;gap:6px;margin-top:8px"></div></div>
+    <div class="panel rules"><b>How to play Ringer</b><br>13 marbles sit in a cross in the ring. Tap a spot on the ring’s edge to place your shooter, then pull back and let go to shoot.<br>Knock a marble out of the ring to keep it. If you knock one out and your shooter stays inside, shoot again from where it stopped.<br>Whoever wins the most marbles wins (7 wins it).</div>
+  </aside>
+</div>
+<div class="ov on" id="setupOv"><div class="panel"><h2>Marbles</h2><div id="cnt" style="display:flex;gap:6px"></div><div id="slots" style="width:100%;display:flex;flex-direction:column;gap:8px"></div><button class="btn primary" id="go">Knuckle down</button></div></div>
+<div class="ov" id="winOv"><div class="panel"><h2 id="winT"></h2><p id="winP"></p><div style="display:flex;gap:8px"><button class="btn primary" id="again">Play again</button><button class="btn" id="change">Change players</button></div></div></div>
+<script>
+const $ = s => document.querySelector(s);
+const V = (n, you, other) => n === 'You' ? you : other; const POS = n => n === 'You' ? 'your' : n + '’s';
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const C = { x:450, y:450, r:340 }, MR = 14, SR = 19;
+const SHOOTERS = [['Red', '#c0182a'], ['Blue', '#2f5f94'], ['Gold', '#e8b51a'], ['Green', '#2f8a4f']];
+const GLASS = ['#7ec8e3', '#f28c8c', '#a7e07a', '#f5d06b', '#c39bd3', '#7fd6c2', '#f7a55e'];
+let G = null, setupN = 2, bots = [false, true, true, true];
+const ctx = $('#c').getContext('2d');
+let AC; function tone(f, d = .06, type = 'triangle', v = .06) { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(v, AC.currentTime); g.gain.exponentialRampToValueAtTime(.001, AC.currentTime + d); o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime + d + .02); } catch (e) {} }
+function fit() { const st = $('#stage'); $('#scaler').style.setProperty('--s', Math.max(.25, Math.min(st.clientWidth, st.clientHeight) / 900 * .96)); }
+new ResizeObserver(fit).observe($('#stage'));
+function setup() {
+  $('#cnt').innerHTML = [2, 3, 4].map(n => `<button class="btn" data-n="${n}" aria-pressed="${n === setupN}">${n} players</button>`).join('');
+  $('#cnt').querySelectorAll('button').forEach(b => b.onclick = () => { setupN = +b.dataset.n; setup(); });
+  $('#slots').innerHTML = [...Array(setupN)].map((_, i) => `<div class="slot"><i style="background:${SHOOTERS[i][1]}"></i><input value="${i === 0 ? 'You' : bots[i] ? 'Computer ' + i : SHOOTERS[i][0]}" data-i="${i}" aria-label="${SHOOTERS[i][0]} player name"><span style="display:flex;gap:4px"><button class="btn" data-i="${i}" data-b="0" aria-pressed="${!bots[i]}">Player</button><button class="btn" data-i="${i}" data-b="1" aria-pressed="${bots[i]}">Computer</button></span></div>`).join('');
+  $('#slots').querySelectorAll('[data-b]').forEach(b => b.onclick = () => { bots[+b.dataset.i] = b.dataset.b === '1'; setup(); });
+  $('#setupOv').classList.add('on');
+}
+$('#go').onclick = () => { const names = [...$('#slots').querySelectorAll('input')].map(i => i.value.trim()); start(names.map((n, i) => ({ name:n || SHOOTERS[i][0], color:SHOOTERS[i][1], bot:bots[i], won:0 }))); };
+$('#newg').onclick = () => { if (G) G.run++; setup(); };
+$('#again').onclick = () => start(G.players.map(p => ({ ...p, won:0 })));
+$('#change').onclick = () => { $('#winOv').classList.remove('on'); setup(); };
+function start(players) {
+  $('#setupOv').classList.remove('on'); $('#winOv').classList.remove('on');
+  const m = []; const sp = 3 * MR + 6;
+  m.push({ x:C.x, y:C.y }); for (let k = 1; k <= 3; k++) { m.push({ x:C.x + k * sp, y:C.y }, { x:C.x - k * sp, y:C.y }, { x:C.x, y:C.y + k * sp }, { x:C.x, y:C.y - k * sp }); }
+  G = { players, turn:0, run:(G ? G.run : 0) + 1, marbles:m.map((p, i) => ({ ...p, vx:0, vy:0, r:MR, color:GLASS[i % GLASS.length], out:false })), shooter:null, phase:'place', moving:false };
+  draw(); turnStart();
+}
+const cur = () => G.players[G.turn];
+function say(t) { $('#msg').textContent = t; }
+function score() { $('#score').innerHTML = G.players.map((p, i) => `<div class="who${i === G.turn ? ' cur' : ''}"><i style="background:${p.color}"></i><span style="flex:1">${p.name}</span><span>${p.won}</span></div>`).join('') + `<small>${G.marbles.filter(m => !m.out).length} marbles left in the ring</small>`; }
+function draw(aim) {
+  ctx.clearRect(0, 0, 900, 900);
+  ctx.beginPath(); ctx.arc(C.x, C.y, C.r, 0, Math.PI * 2); ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(255,248,230,.85)'; ctx.setLineDash([]); ctx.stroke();
+  ctx.beginPath(); ctx.arc(C.x, C.y, C.r + 10, 0, Math.PI * 2); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.stroke();
+  const ball = (m, col, r) => { ctx.beginPath(); ctx.ellipse(m.x + 4, m.y + 6, r, r * .7, 0, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fill();
+    const g = ctx.createRadialGradient(m.x - r * .35, m.y - r * .4, r * .1, m.x, m.y, r); g.addColorStop(0, '#fff'); g.addColorStop(.25, col); g.addColorStop(1, shade(col)); ctx.beginPath(); ctx.arc(m.x, m.y, r, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(m.x - r * .6, m.y + r * .2); ctx.quadraticCurveTo(m.x, m.y - r * .5, m.x + r * .6, m.y + r * .1); ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 2; ctx.stroke(); };
+  G.marbles.filter(m => !m.out).forEach(m => ball(m, m.color, m.r));
+  if (G.shooter) ball(G.shooter, cur().color, SR);
+  if (G.phase === 'place' && !cur().bot) { ctx.setLineDash([10, 10]); ctx.beginPath(); ctx.arc(C.x, C.y, C.r, 0, Math.PI * 2); ctx.strokeStyle = '#e8a93a'; ctx.lineWidth = 6; ctx.stroke(); ctx.setLineDash([]); }
+  if (aim) { ctx.beginPath(); ctx.moveTo(G.shooter.x, G.shooter.y); ctx.lineTo(G.shooter.x + aim.x * 3, G.shooter.y + aim.y * 3); ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 4; ctx.setLineDash([12, 8]); ctx.stroke(); ctx.setLineDash([]); }
+  score();
+}
+function shade(hex) { const n = parseInt(hex.slice(1), 16); const f = .45; return `rgb(${(n >> 16) * f | 0},${(n >> 8 & 255) * f | 0},${(n & 255) * f | 0})`; }
+function turnStart() {
+  if (!G) return; G.shooter = null; G.phase = 'place'; draw();
+  const p = cur();
+  if (p.bot) { say(`${p.name} is picking a spot…`); const r = G.run; setTimeout(() => r === G.run && botShot(), 1100); }
+  else say(`${p.name}, tap the edge of the ring to place your shooter.`);
+}
+function toBoard(e) {
+  const cv = $('#c'); if (e.target === cv && cv.clientWidth) return { x:e.offsetX * 900 / cv.clientWidth, y:e.offsetY * 900 / cv.clientHeight };
+  const r = cv.getBoundingClientRect(), s = r.width / 900; return { x:(e.clientX - r.left) / s, y:(e.clientY - r.top) / s };
+}
+function dragVec(o, e) {
+  const st = window.__v3 || { on:false }, sp = st.on ? (st.spin || 0) * Math.PI / 180 : 0, c = st.on ? Math.cos(st.tilt * Math.PI / 180) : 1;
+  const s = ($('#c').getBoundingClientRect().width / 900 || 1) * (st.on ? 1 : 1); let dx = (e.clientX - o.x), dy = (e.clientY - o.y) / c;
+  const ca = Math.cos(-sp), sa = Math.sin(-sp); return { x:(dx * ca - dy * sa) / s, y:(dx * sa + dy * ca) / s };
+}
+$('#stage').addEventListener('pointerdown', e => {
+  if (!G || G.moving || cur().bot || e.target.closest('button')) return;
+  if (G.phase === 'place') {
+    const p = toBoard(e), a = Math.atan2(p.y - C.y, p.x - C.x);
+    G.shooter = { x:C.x + Math.cos(a) * (C.r + SR + 4), y:C.y + Math.sin(a) * (C.r + SR + 4), vx:0, vy:0, r:SR }; G.phase = 'aim'; draw(); say('Now pull back from your shooter and let go.'); return;
+  }
+  if (G.phase === 'aim') {
+    const o = { x:e.clientX, y:e.clientY }; $('#stage').setPointerCapture(e.pointerId);
+    const mv = ev => { const v = dragVec(o, ev), l = Math.hypot(v.x, v.y), k = l > 200 ? 200 / l : 1; draw({ x:-v.x * k, y:-v.y * k }); };
+    const up = ev => { $('#stage').removeEventListener('pointermove', mv); $('#stage').removeEventListener('pointerup', up); const v = dragVec(o, ev), l = Math.hypot(v.x, v.y); if (l < 12) { draw(); return; } const k = l > 200 ? 200 / l : 1; shoot(-v.x * k * .11, -v.y * k * .11); };
+    $('#stage').addEventListener('pointermove', mv); $('#stage').addEventListener('pointerup', up);
+  }
+});
+async function shoot(vx, vy) {
+  G.phase = 'roll'; G.moving = true; G.shooter.vx = vx; G.shooter.vy = vy; tone(500, .05, 'square');
+  const before = G.marbles.filter(m => !m.out).length;
+  await simulate();
+  const knocked = before - G.marbles.filter(m => !m.out).length, p = cur(); p.won += knocked; G.moving = false;
+  const sIn = Math.hypot(G.shooter.x - C.x, G.shooter.y - C.y) < C.r;
+  draw(); if (window.__cam) { window.__cam.focus(G.shooter.x, G.shooter.y, 1.5); setTimeout(() => window.__cam && window.__cam.wide(), 1200); }
+  if (G.marbles.every(m => m.out) || p.won >= 7) return win();
+  if (knocked && sIn) { say(`${p.name} ${V(p.name,'knock','knocks')} out ${knocked}! Shoot again from where your shooter stopped.`); tone(660, .12); G.phase = 'aim'; if (p.bot) { const r = G.run; setTimeout(() => r === G.run && botShot(true), 1000); } return; }
+  say(knocked ? `${p.name} ${V(p.name,'knock','knocks')} out ${knocked}, but the shooter rolled out of the ring.` : `${p.name} ${V(p.name,'miss','misses')}.`);
+  await sleep(1100); G.turn = (G.turn + 1) % G.players.length; turnStart();
+}
+function simulate() {
+  return new Promise(res => {
+    const all = () => G.marbles.filter(m => !m.out).concat([G.shooter]);
+    const tick = () => {
+      for (let sub = 0; sub < 4; sub++) {
+        const bs = all();
+        bs.forEach(b => { b.x += b.vx / 4; b.y += b.vy / 4; const sp = Math.hypot(b.vx, b.vy); const f = Math.max(0, sp - .045) / (sp || 1); b.vx *= f; b.vy *= f; });
+        for (let i = 0; i < bs.length; i++) for (let j = i + 1; j < bs.length; j++) {
+          const a = bs[i], b = bs[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), md = a.r + b.r;
+          if (d < md && d > 0) {
+            const nx = dx / d, ny = dy / d, ma = a.r * a.r, mb = b.r * b.r, rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+            if (rv < 0) { const imp = -1.9 * rv / (1 / ma + 1 / mb); a.vx -= imp * nx / ma; a.vy -= imp * ny / ma; b.vx += imp * nx / mb; b.vy += imp * ny / mb; tone(1400 + Math.random() * 600, .03, 'square', .05); }
+            const ov = (md - d) / 2; a.x -= nx * ov; a.y -= ny * ov; b.x += nx * ov; b.y += ny * ov;
+          }
+        }
+        G.marbles.forEach(m => { if (!m.out && Math.hypot(m.x - C.x, m.y - C.y) > C.r + m.r * .2 && Math.hypot(m.vx, m.vy) < .3) { m.out = true; tone(880, .1); } });
+        G.marbles.forEach(m => { if (!m.out && (m.x < -20 || m.x > 920 || m.y < -20 || m.y > 920)) m.out = true; });
+        const sh = G.shooter; if (sh.x < SR || sh.x > 900 - SR) { sh.vx *= -.5; sh.x = Math.max(SR, Math.min(900 - SR, sh.x)); } if (sh.y < SR || sh.y > 900 - SR) { sh.vy *= -.5; sh.y = Math.max(SR, Math.min(900 - SR, sh.y)); }
+      }
+      draw();
+      if (all().some(b => Math.hypot(b.vx, b.vy) > .02)) requestAnimationFrame(tick);
+      else { G.marbles.forEach(m => { if (!m.out && Math.hypot(m.x - C.x, m.y - C.y) > C.r) m.out = true; }); res(); }
+    };
+    requestAnimationFrame(tick);
+  });
+}
+function win() { const best = [...G.players].sort((a, b) => b.won - a.won)[0]; $('#winT').textContent = best.name === 'You' ? 'You win!' : `${best.name} wins!`; $('#winP').textContent = `${best.name} won ${best.won} marble${best.won === 1 ? '' : 's'}.`; $('#winOv').classList.add('on'); tone(523, .2); setTimeout(() => tone(784, .3), 180); }
+function botShot(fromHere) {
+  const live = G.marbles.filter(m => !m.out); if (!live.length) return;
+  let t;
+  if (!fromHere) {
+    t = live.sort((a, b) => Math.hypot(b.x - C.x, b.y - C.y) - Math.hypot(a.x - C.x, a.y - C.y))[0];
+    const a = Math.atan2(t.y - C.y, t.x - C.x) + (Math.random() - .5) * .9;
+    G.shooter = { x:C.x + Math.cos(a) * (C.r + SR + 4), y:C.y + Math.sin(a) * (C.r + SR + 4), vx:0, vy:0, r:SR };
+  } else t = live.sort((a, b) => Math.hypot(a.x - G.shooter.x, a.y - G.shooter.y) - Math.hypot(b.x - G.shooter.x, b.y - G.shooter.y))[0];
+  draw();
+  const dx = t.x - G.shooter.x, dy = t.y - G.shooter.y, d = Math.hypot(dx, dy), ang = Math.atan2(dy, dx) + (Math.random() - .5) * .12, pw = Math.min(22, 9 + d / 40);
+  setTimeout(() => { if (G && !G.moving) shoot(Math.cos(ang) * pw, Math.sin(ang) * pw); }, 700);
+}
+fit(); setup();
+</script>
+<script>window.__V3 = { key:'marbles', top:'.top', before:'#newg', stage:'#scaler', target:'#ground', tilt:46, spin:true, followable:true, focusZoom:1.5 };</script>
+<script>
+/* 3D view, follow camera and zoom add-on. Config: window.__V3 */
+(function () {
+  const C = window.__V3, root = document.documentElement;
+  const st = { on:false, tilt:C.tilt || 50, spin:0, zoom:1, follow:true };
+  try { Object.assign(st, JSON.parse(localStorage.getItem('v3-' + C.key) || '{}')); } catch (e) {}
+  st.zoom = Math.max(1, Math.min(3, st.zoom || 1));
+  const cam = { z:1, x:null, y:null, px:0, py:0 };
+  const TF = C.transform || 'translate(var(--px, 0px), var(--py, 0px)) scale(var(--zoom, 1)) rotateX(var(--tilt, 0deg)) rotateZ(var(--spin, 0deg)) translate(var(--cx, 0px), var(--cy, 0px))';
+  const css = document.createElement('style');
+  css.textContent = `
+${C.stage}{ perspective:${C.persp || 1700}px; perspective-origin:50% ${C.originY || '35%'}; }
+${C.target}{ transform-style:preserve-3d; transition:transform .75s cubic-bezier(.3,.7,.2,1); transform:${TF}; }
+${C.target}.v3-follow{ transition:transform .5s ease-out; }
+${(C.preserve || []).length ? C.preserve.join(',') + '{ transform-style:preserve-3d; }' : ''}
+${C.billboard ? `${C.billboard}{ transform:rotateZ(calc(var(--spin, 0deg) * -1)) rotateX(calc(var(--tilt, 0deg) * -1)); transform-origin:${C.bbOrigin || '50% 90%'}; }` : ''}
+.v3-drag ${C.target}, .v3-drag ${C.billboard || '.__none'}{ transition:none !important; }
+${C.extraCss || ''}
+@media (prefers-reduced-motion: reduce){ ${C.target}{ transition:none !important; } }`;
+  document.head.appendChild(css);
+  const bar = document.querySelector(C.top), where = C.before ? bar.querySelector(C.before) : null;
+  const mk = (label, aria) => { const b = document.createElement('button'); b.className = C.btnClass || 'btn'; b.textContent = label; if (aria) b.setAttribute('aria-label', aria); (where ? bar.insertBefore(b, where) : bar.appendChild(b)); return b; };
+  const tgl = mk('3D view'), rl = mk('⟲', 'Rotate left'), rr = mk('⟳', 'Rotate right');
+  const zo = mk('−', 'Zoom out'), zi = mk('+', 'Zoom in');
+  const fol = C.followable ? mk('Follow camera') : null;
+  const tgt = () => document.querySelector(C.target);
+  function setVars() {
+    const el = tgt(); if (!el) return;
+    const z = Math.max(st.zoom, cam.z);
+    root.style.setProperty('--tilt', st.on ? st.tilt + 'deg' : '0deg');
+    root.style.setProperty('--spin', st.on && C.spin ? st.spin + 'deg' : '0deg');
+    root.style.setProperty('--zoom', z);
+    const w = el.offsetWidth, h = el.offsetHeight;
+    const fx = cam.x == null ? w / 2 : cam.x, fy = cam.y == null ? h / 2 : cam.y;
+    root.style.setProperty('--cx', (w / 2 - fx) + 'px'); root.style.setProperty('--cy', (h / 2 - fy) + 'px');
+    root.style.setProperty('--px', cam.px + 'px'); root.style.setProperty('--py', cam.py + 'px');
+  }
+  function apply() {
+    root.classList.toggle('is3d', st.on);
+    tgl.textContent = st.on ? '2D view' : '3D view'; tgl.setAttribute('aria-pressed', st.on);
+    rl.hidden = rr.hidden = !(st.on && C.spin);
+    if (fol) { fol.setAttribute('aria-pressed', st.follow); fol.textContent = st.follow ? 'Follow camera: on' : 'Follow camera: off'; }
+    zo.disabled = st.zoom <= 1; zi.disabled = st.zoom >= 3;
+    try { localStorage.setItem('v3-' + C.key, JSON.stringify(st)); } catch (e) {}
+    setVars(); if (C.onChange) C.onChange(st);
+  }
+  tgl.onclick = () => { st.on = !st.on; apply(); };
+  rl.onclick = () => { st.spin -= 45; apply(); };
+  rr.onclick = () => { st.spin += 45; apply(); };
+  zi.onclick = () => { st.zoom = Math.min(3, +(st.zoom + .25).toFixed(2)); apply(); };
+  zo.onclick = () => { st.zoom = Math.max(1, +(st.zoom - .25).toFixed(2)); if (st.zoom === 1) { cam.px = cam.py = 0; } apply(); };
+  if (fol) fol.onclick = () => { st.follow = !st.follow; if (!st.follow) api.wide(); apply(); };
+  function localPos(el) {
+    const T = tgt(); let x = el.offsetWidth / 2, y = el.offsetHeight / 2, n = el;
+    while (n && n !== T) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; if (n && !T.contains(n) && n !== T) break; }
+    return [x, y];
+  }
+  let backT = null;
+  const api = window.__cam = {
+    focus(x, y, z, follow) { if (!st.follow || !C.followable) return; clearTimeout(backT); cam.x = x; cam.y = y; cam.z = z || C.focusZoom || 1.8; tgt().classList.toggle('v3-follow', !!follow); setVars(); },
+    focusEl(el, z, back) { if (!el || !st.follow || !C.followable) return; const [x, y] = localPos(el); api.focus(x, y, z); if (back) { clearTimeout(backT); backT = setTimeout(api.wide, back); } },
+    wide() { clearTimeout(backT); cam.x = cam.y = null; cam.z = 1; const el = tgt(); if (el) el.classList.remove('v3-follow'); setVars(); },
+    state:st, cam,
+    pan(px, py) { cam.px = px; cam.py = py; setVars(); },
+    zoomBy(dz) { st.zoom = Math.max(1, Math.min(3, +(st.zoom + dz).toFixed(2))); if (st.zoom === 1) cam.px = cam.py = 0; apply(); }
+  };
+  if (C.drag) {
+    const stage = document.querySelector(C.stage); let d = null;
+    stage.addEventListener('pointerdown', e => { if (!st.on || e.target.closest('button, input, .no-orbit')) return; d = { x:e.clientX, y:e.clientY, spin:st.spin, tilt:st.tilt }; stage.setPointerCapture(e.pointerId); root.classList.add('v3-drag'); });
+    stage.addEventListener('pointermove', e => { if (!d) return; if (C.spin) st.spin = d.spin + (e.clientX - d.x) * .35; st.tilt = Math.max(20, Math.min(68, d.tilt - (e.clientY - d.y) * .2)); apply(); });
+    const end = () => { if (d) { d = null; root.classList.remove('v3-drag'); apply(); } };
+    stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  }
+  window.__v3 = st;
+  new ResizeObserver(setVars).observe(document.body);
+  apply();
+})();
+
+</script>
+</body>
+</html>

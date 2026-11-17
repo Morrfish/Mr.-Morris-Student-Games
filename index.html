@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mr. Morris’ Game Closet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --wall:#ece2cf; --wall2:#e2d5bc; --ink:#1d1719; --muted:#5d5147; --panel:#f8f2e6; --line:#cdbfa4;
+  --wood:#8a5a31; --wood2:#6b4423; --woodEdge:#4a2e16; --accent:#b3102b; --gold:#e8a93a; --btn:#1d1719; --btnInk:#f8f2e6;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --wall:#17120f; --wall2:#1f1915; --ink:#efe6d3; --muted:#b8ab97; --panel:#221b17; --line:#3a3029;
+    --wood:#6e4626; --wood2:#55351b; --woodEdge:#2f1d0e; --accent:#e2425a; --btn:#e8a93a; --btnInk:#1d1719; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --wall:#17120f; --wall2:#1f1915; --ink:#efe6d3; --muted:#b8ab97; --panel:#221b17; --line:#3a3029;
+  --wood:#6e4626; --wood2:#55351b; --woodEdge:#2f1d0e; --accent:#e2425a; --btn:#e8a93a; --btnInk:#1d1719; color-scheme: dark;
+}
+:root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+*,*::before,*::after{ box-sizing:inherit; }
+[hidden]{ display:none !important; }
+body{ margin:0; min-height:100vh; color:var(--ink); font-family:Nunito, system-ui, sans-serif; background:var(--wall);
+  background-image:repeating-linear-gradient(90deg, transparent 0 118px, rgba(0,0,0,.035) 118px 120px); }
+button, input, textarea, select{ font:inherit; }
+button{ cursor:pointer; }
+:focus-visible{ outline:3px solid var(--gold); outline-offset:3px; }
+
+header{ position:sticky; top:0; z-index:10; display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:14px clamp(16px,4vw,48px); background:var(--wall2); border-bottom:1px solid var(--line); }
+body::before{ content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:10; background:var(--wall2); }
+header h1{ margin:0 auto 0 0; font-family:Bungee, Impact, sans-serif; font-weight:400; font-size:clamp(22px,3vw,34px); line-height:1; letter-spacing:.5px; }
+header h1 span{ color:var(--accent); }
+.search{ padding:9px 14px; border-radius:999px; border:1px solid var(--line); background:var(--panel); color:var(--ink); width:min(260px,60vw); }
+.btn{ border:2px solid var(--ink); background:var(--panel); color:var(--ink); border-radius:12px; padding:10px 16px; font-weight:900; }
+.btn.primary{ background:var(--btn); color:var(--btnInk); border-color:var(--btn); }
+.btn.danger{ border-color:var(--accent); color:var(--accent); }
+.btn:disabled{ opacity:.5; cursor:default; }
+
+main{ padding:28px clamp(16px,4vw,48px) 60px; max-width:1500px; margin:0 auto; }
+.note{ margin:0 0 18px; color:var(--muted); font-weight:700; }
+.status{ padding:60px 20px; text-align:center; color:#f3e6cf; font-weight:800; font-size:18px; }
+
+.closetframe{ background:linear-gradient(180deg, var(--wood) 0%, var(--wood2) 100%); padding:18px; border-radius:10px; box-shadow:0 30px 50px -20px rgba(0,0,0,.55), inset 0 2px 0 rgba(255,255,255,.15); }
+.cubbies{ display:grid; grid-template-columns:repeat(var(--cols,4), minmax(0,1fr)); gap:18px; }
+.cubby{ position:relative; aspect-ratio:1 / 1; border-radius:4px; overflow:hidden; perspective:850px; perspective-origin:50% -25%;
+  background:linear-gradient(180deg, #2a1a0e 0%, #3a2414 55%, #4a2e19 100%);
+  box-shadow:inset 0 16px 18px -6px rgba(0,0,0,.65), inset 14px 0 16px -8px rgba(0,0,0,.5), inset -14px 0 16px -8px rgba(0,0,0,.5); }
+.cubby::after{ content:""; position:absolute; z-index:0; left:0; right:0; bottom:0; height:12%; background:linear-gradient(180deg, rgba(120,80,45,.0), rgba(120,80,45,.55)); pointer-events:none; }
+.item{ position:absolute; bottom:6%; transform-style:preserve-3d; cursor:pointer; transition:transform .3s cubic-bezier(.3,.7,.2,1), filter .3s, opacity .3s; outline:none; }
+.item:hover, .item:focus-visible{ transform:translateY(-10px) translateZ(20px); filter:drop-shadow(0 0 10px rgba(232,169,58,.9)); z-index:5; }
+.item.dim{ opacity:.25; filter:grayscale(1); }
+.item.match{ filter:drop-shadow(0 0 12px rgba(232,169,58,1)); }
+.cube{ position:relative; transform-style:preserve-3d; }
+.cube > div{ position:absolute; backface-visibility:hidden; -webkit-backface-visibility:hidden; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(0,0,0,.35); }
+.cube > div.spine.v{ filter:brightness(.82); }
+.cube > div.f-front.spine{ filter:brightness(.92); border-top:2px solid rgba(255,255,255,.18); }
+.cube .f-front{ left:0; top:0; }
+.cube img{ width:100%; height:100%; object-fit:contain; display:block; background:#10181a; }
+.spine{ background:var(--spine); display:flex; align-items:center; justify-content:center; color:var(--spineInk, #fff); font-family:Nunito, system-ui, sans-serif; font-weight:900; font-size:12px; white-space:nowrap; letter-spacing:.2px; }
+.spine b{ text-shadow:var(--spineShadow, 0 0 1px rgba(0,0,0,.9), 0 1px 2px rgba(0,0,0,.8)); }
+.spine.v b{ writing-mode:vertical-rl; font-weight:400; }
+.spine b{ font-weight:900; text-align:center; line-height:1.05; }
+.lidline{ position:absolute; left:0; right:0; bottom:14%; height:3px; background:rgba(0,0,0,.45); }
+.basepart{ position:absolute; left:0; right:0; bottom:0; height:14%; background:rgba(0,0,0,.28); }
+.shadow3{ position:absolute; left:-6%; right:-6%; bottom:-6px; height:14px; border-radius:50%; background:rgba(0,0,0,.55); filter:blur(5px); }
+.tag{ position:absolute; left:50%; transform:translateX(-50%); bottom:-1px; z-index:6; padding:2px 8px; border-radius:6px 6px 0 0; background:rgba(16,12,8,.78); color:#efe6d3; font-weight:900; font-size:11px; white-space:nowrap; max-width:92%; overflow:hidden; text-overflow:ellipsis; pointer-events:none; opacity:0; transition:opacity .2s; }
+.item:hover .tag, .item:focus-visible .tag{ opacity:1; }
+.junk{ position:absolute; pointer-events:none; }
+.junk.die{ width:22px; height:22px; border-radius:5px; background:#f5efe1; box-shadow:inset -3px -3px 0 rgba(0,0,0,.15), 0 3px 4px rgba(0,0,0,.5); display:grid; grid-template:repeat(3,1fr)/repeat(3,1fr); padding:3px; }
+.junk.die i{ border-radius:50%; background:#1d1719; margin:1px; visibility:hidden; }
+.junk.die i.on{ visibility:visible; }
+.junk.card{ width:30px; height:42px; border-radius:4px; background:#f5efe1; border:3px solid var(--c); box-shadow:0 3px 5px rgba(0,0,0,.5); }
+.junk.pawn{ width:16px; height:26px; }
+.junk.pawn::before{ content:""; position:absolute; left:3px; top:0; width:10px; height:10px; border-radius:50%; background:var(--c); }
+.junk.pawn::after{ content:""; position:absolute; left:0; bottom:0; width:16px; height:17px; border-radius:8px 8px 3px 3px; background:var(--c); box-shadow:0 3px 4px rgba(0,0,0,.5); }
+
+/* closet doors */
+.closet{ position:fixed; inset:0; z-index:25; display:flex; align-items:stretch; justify-content:center; perspective:1800px; background:#140e0a; transition:background .5s .15s, opacity .6s 1.2s; }
+.closet.open{ background:transparent; opacity:0; pointer-events:none; }
+.door{ position:relative; width:50%; max-width:520px; height:100%; background:linear-gradient(90deg, #8a5a31, #9b693d 40%, #7e522c); transition:transform 1.4s cubic-bezier(.4,.1,.2,1); box-shadow:inset 0 0 0 10px #6b4423, inset 0 0 60px rgba(0,0,0,.35); display:flex; flex-direction:column; gap:4%; padding:12% 9%; }
+.door.l{ transform-origin:0 50%; border-right:2px solid #3e2611; }
+.door.r{ transform-origin:100% 50%; border-left:2px solid #3e2611; }
+.closet.open .door.l{ transform:rotateY(-108deg); }
+.closet.open .door.r{ transform:rotateY(108deg); }
+.door .pnl{ flex:1; border-radius:6px; background:linear-gradient(135deg, rgba(255,255,255,.07), rgba(0,0,0,.08)); box-shadow:inset 6px 6px 10px rgba(0,0,0,.35), inset -6px -6px 10px rgba(255,255,255,.08); }
+.door .pnl.tall{ flex:2.2; }
+.knob{ position:absolute; top:52%; width:22px; height:22px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #ffe6a0, #c98a1a 60%, #7a5208); box-shadow:0 3px 6px rgba(0,0,0,.6); }
+.door.l .knob{ right:24px; } .door.r .knob{ left:24px; }
+.sign{ position:absolute; left:50%; top:16%; transform:translateX(-50%) rotate(-2deg); z-index:2; padding:16px 26px; background:#f5efe1; color:#1d1719; border-radius:8px; border:4px solid #1d1719; box-shadow:0 10px 24px rgba(0,0,0,.5); text-align:center; transition:opacity .4s; }
+.sign b{ display:block; font-family:Bungee, Impact, sans-serif; font-weight:400; font-size:clamp(20px,3.4vw,38px); line-height:1.05; }
+.sign b span{ color:#b3102b; }
+.sign small{ display:block; margin-top:6px; font-weight:800; color:#5d5147; }
+.closet.open .sign{ opacity:0; }
+.openbtn{ position:absolute; left:50%; bottom:14%; transform:translateX(-50%); z-index:2; border:0; border-radius:999px; padding:14px 28px; background:#e8a93a; color:#1d1719; font-weight:900; font-size:18px; box-shadow:0 8px 20px rgba(0,0,0,.5); transition:opacity .3s; }
+.closet.open .openbtn{ opacity:0; }
+@media (prefers-reduced-motion: reduce){ .door{ transition:none; } }
+.overlay{ position:fixed; inset:0; z-index:30; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(10,8,6,.82); }
+.overlay.on{ display:flex; }
+
+/* unboxing */
+.stage{ position:relative; display:flex; gap:40px; align-items:center; justify-content:center; width:100%; max-width:1100px; perspective:1600px; }
+.big{ --h:min(72vh,560px); position:relative; height:var(--h); width:calc(var(--h) * var(--ar)); max-width:46vw; max-height:calc(46vw / var(--ar)); flex:none; transform-style:preserve-3d; }
+.big .tray{ position:absolute; inset:0; border-radius:6px; background:radial-gradient(ellipse at 50% 40%, #213230, #0d1514 75%); box-shadow:inset 0 0 0 10px var(--spine), inset 0 0 40px rgba(0,0,0,.8), 0 30px 60px rgba(0,0,0,.5); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:28px; text-align:center; color:#efe6d3; }
+.big .tray b{ font-family:Bungee, Impact, sans-serif; font-weight:400; font-size:clamp(20px,2.6vw,30px); line-height:1.1; }
+.big .tray span{ font-weight:800; color:#e8a93a; }
+.big .tray{ z-index:1; }
+.big .lid{ position:absolute; inset:-6px; border-radius:6px; overflow:hidden; transform-origin:50% 50%; box-shadow:0 0 0 4px var(--spine), 0 30px 60px rgba(0,0,0,.55); background:#10181a; z-index:3; }
+.big .lid img{ width:100%; height:100%; object-fit:contain; display:block; background:#10181a; }
+.big.enter{ animation:pull .8s cubic-bezier(.3,.7,.2,1) both; }
+@keyframes pull{ from{ transform:translateY(40vh) rotateY(-24deg) scale(.45); opacity:0; } to{ transform:none; opacity:1; } }
+.big.open .lid{ animation:lidoff 1.4s cubic-bezier(.3,.7,.2,1) forwards; }
+@keyframes lidoff{ 0%{ transform:none; z-index:3; } 45%{ transform:translateY(-46%) scale(1.04) rotateZ(-3deg); z-index:3; } 55%{ z-index:0; } 100%{ transform:translate(-22%, -12%) rotateZ(-8deg) scale(.95); z-index:0; } }
+.info{ max-width:380px; color:#efe6d3; display:flex; flex-direction:column; gap:12px; opacity:0; transform:translateX(20px); transition:opacity .5s .7s, transform .5s .7s; }
+.stage.open .info{ opacity:1; transform:none; }
+.info h2{ margin:0; font-family:Bungee, Impact, sans-serif; font-weight:400; font-size:clamp(26px,3.4vw,40px); line-height:1.05; }
+.info p{ margin:0; line-height:1.5; font-size:16px; }
+.facts{ display:flex; gap:8px; flex-wrap:wrap; }
+.facts span{ padding:5px 12px; border-radius:999px; background:rgba(232,169,58,.16); border:1px solid rgba(232,169,58,.5); font-weight:800; font-size:14px; }
+.info .btnrow{ display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+.info .btn{ background:transparent; color:#efe6d3; border-color:#efe6d3; }
+.info .btn.primary{ background:#e8a93a; color:#1d1719; border-color:#e8a93a; font-size:18px; padding:12px 26px; }
+.info .btn.danger{ border-color:#ff8a98; color:#ff8a98; }
+.info .edit{ display:flex; gap:10px; flex-wrap:wrap; }
+@media (max-width:760px){
+  .stage{ flex-direction:column; gap:18px; }
+  .big{ --h:min(46vh,420px); max-width:84vw; max-height:calc(84vw / var(--ar)); }
+  .info{ align-items:center; text-align:center; }
+}
+
+/* player */
+.player{ position:fixed; inset:0; z-index:40; display:none; flex-direction:column; background:#0b1012; }
+.player.on{ display:flex; }
+.pbar{ display:flex; align-items:center; gap:12px; padding:8px 14px; padding-top:calc(8px + env(safe-area-inset-top,0px)); background:#1d1719; color:#efe6d3; }
+.pbar b{ font-family:Bungee, Impact, sans-serif; font-weight:400; font-size:18px; margin-right:auto; }
+.pbar .btn{ background:transparent; color:#efe6d3; border-color:#efe6d3; padding:7px 12px; font-size:14px; }
+.player iframe{ flex:1; width:100%; border:0; background:#0b1012; }
+.loading{ position:absolute; inset:60px 0 0; display:flex; align-items:center; justify-content:center; color:#efe6d3; font-weight:800; font-size:18px; pointer-events:none; }
+
+/* form */
+.panel{ background:var(--panel); color:var(--ink); border-radius:18px; width:min(640px,100%); max-height:92vh; overflow:auto; padding:26px; box-shadow:0 30px 80px rgba(0,0,0,.5); }
+.panel h2{ margin:0 0 4px; font-family:Bungee, Impact, sans-serif; font-weight:400; font-size:28px; }
+.panel p.hint{ margin:0 0 16px; color:var(--muted); }
+.grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 14px; }
+.grid .full{ grid-column:1 / -1; }
+label{ display:flex; flex-direction:column; gap:5px; font-weight:800; font-size:14px; }
+label small{ font-weight:600; color:var(--muted); }
+.panel input[type=text], .panel input[type=url], .panel textarea{ padding:9px 11px; border-radius:10px; border:1px solid var(--line); background:var(--wall); color:var(--ink); }
+.panel textarea{ min-height:70px; resize:vertical; }
+.panel input[type=color]{ width:56px; height:38px; border:1px solid var(--line); border-radius:10px; background:var(--wall); padding:2px; }
+.choice{ display:flex; gap:16px; flex-wrap:wrap; font-weight:700; }
+.choice label{ flex-direction:row; align-items:center; gap:6px; }
+.preview{ display:flex; gap:12px; align-items:center; }
+.preview img{ height:90px; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,.3); }
+.formbar{ display:flex; gap:10px; justify-content:flex-end; margin-top:18px; flex-wrap:wrap; }
+.err{ color:var(--accent); font-weight:800; margin:10px 0 0; }
+@media (max-width:560px){ .grid{ grid-template-columns:1fr; } }
+@media (prefers-reduced-motion: reduce){ .item, .info{ transition:none !important; } .big.enter, .big.open .lid{ animation-duration:.01s; } }
+</style>
+</head>
+<body>
+<div class="closet" id="closet"><div class="door l"><div class="pnl"></div><div class="pnl tall"></div><span class="knob"></span></div><div class="door r"><div class="pnl"></div><div class="pnl tall"></div><span class="knob"></span></div><div class="sign"><b>Mr. Morris’ <span>Game Closet</span></b><small>Games made by Bluffton students</small></div><button class="openbtn" id="openCloset">Open the closet</button></div>
+<header>
+  <h1>Mr. Morris’ <span>Game Closet</span></h1>
+  <input class="search" id="search" type="search" placeholder="Find a game" aria-label="Find a game">
+  <button class="btn primary" id="addBtn" hidden>Add a game</button>
+</header>
+<main>
+  <p class="note" id="note">It’s a little messy in here. Grab any box to unbox it and play.</p>
+  <div class="closetframe"><div id="shelves"><div class="status">Opening the game closet…</div></div></div>
+</main>
+
+<div class="overlay" id="unbox" role="dialog" aria-modal="true" aria-labelledby="ubTitle">
+  <div class="stage" id="ubStage">
+    <div class="big" id="ubBox">
+      <div class="tray"><b id="ubTrayTitle"></b><span>Ready to play</span></div>
+      <div class="lid"><img id="ubCover" alt=""></div>
+    </div>
+    <div class="info">
+      <h2 id="ubTitle"></h2>
+      <div class="facts" id="ubFacts"></div>
+      <p id="ubDesc"></p>
+      <div class="btnrow"><button class="btn primary" id="playBtn">Play</button><button class="btn" id="backBtn">Put it back</button></div>
+      <div class="edit" id="ubEdit" hidden><button class="btn" id="editBtn">Edit game</button><button class="btn danger" id="delBtn">Remove from closet</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="player" id="player" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+  <div class="pbar"><b id="pTitle"></b><button class="btn" id="fsBtn">Full screen</button><button class="btn" id="closeGame">Back to the closet</button></div>
+  <iframe id="frame" title="Game" allow="fullscreen; autoplay"></iframe>
+  <div class="loading" id="loading">Setting up the board…</div>
+</div>
+
+<div class="overlay" id="formOv" role="dialog" aria-modal="true" aria-labelledby="fTitle">
+  <form class="panel" id="form">
+    <h2 id="fTitle">Add a game</h2>
+    <p class="hint">Upload the game’s HTML file and its box cover. Students will find it in the closet right away.</p>
+    <div class="grid">
+      <label class="full">Game title<input type="text" id="fName" required maxlength="80"></label>
+      <label class="full">Short description <small>What’s it about? One or two sentences.</small><textarea id="fDesc" maxlength="400"></textarea></label>
+      <label>Players<input type="text" id="fPlayers" placeholder="2–4 players" maxlength="30"></label>
+      <label>Play time<input type="text" id="fTime" placeholder="25–40 min" maxlength="30"></label>
+      <label>Ages<input type="text" id="fAges" placeholder="10+" maxlength="20"></label>
+      <label>Box side color<input type="color" id="fColor" value="#b3102b"><small id="fColorNote">Picked from the cover when you choose one.</small></label>
+      <label>Made by <small>Team or student names</small><input type="text" id="fBy" maxlength="80"></label>
+      <div class="full preview"><label>Box cover image<input type="file" id="fCover" accept="image/png,image/jpeg,image/webp"></label><img id="fCoverPrev" alt="" hidden></div>
+      <div class="full">
+        <div class="choice" role="radiogroup" aria-label="Game source">
+          <label><input type="radio" name="src" value="file" checked> Upload the game file (.html)</label>
+          <label><input type="radio" name="src" value="link"> Link to a published game</label>
+        </div>
+      </div>
+      <label class="full" id="fFileWrap">Game file<input type="file" id="fFile" accept=".html,.htm,text/html"><small id="fFileNote"></small></label>
+      <label class="full" id="fLinkWrap" hidden>Game link<input type="url" id="fLink" placeholder="https://claude.ai/artifact/…"><small>Link games open in a new tab.</small></label>
+    </div>
+    <p class="err" id="fErr" hidden></p>
+    <div class="formbar"><button type="button" class="btn" id="fCancel">Cancel</button><button type="submit" class="btn primary" id="fSave">Put it in the closet</button></div>
+  </form>
+</div>
+
+<script type="application/json" id="bundle">[{"addedAt": 1793361000000, "ages": "10+", "by": "Mr. Morris (sample game)", "color": "#cf271a", "coverH": 1536, "coverW": 1024, "desc": "One player is the Beast. Everyone else races 100 spaces down the forest trail to the Rescue Truck. The trail reshuffles every game, and the Beast has secret passages you can’t see.", "players": "2–4 players", "time": "25–40 min", "title": "Running from the Beast", "url": null, "id": "running-from-the-beast", "path": "games/running-from-the-beast.html", "cover": "covers/running-from-the-beast.jpg"}, {"addedAt": 1793362000000, "ages": "All ages", "by": "Mr. Morris", "color": "#2f6b3f", "coverH": 1000, "coverW": 1500, "desc": "Ten jigsaw puzzles: landscapes, baby animals, artsy paintings, fantasy worlds and history scenes. Pick from 12 to 294 pieces. Your progress saves if you leave.", "players": "1+ players", "time": "10–60 min", "title": "Puzzle Box", "url": null, "id": "puzzle-box", "path": "games/puzzle-box.html", "cover": "covers/puzzle-box.jpg"}, {"addedAt": 1793362001000, "ages": "7+", "by": "Mr. Morris", "color": "#3a2a1e", "coverH": 1000, "coverW": 1500, "desc": "A double-six set with three games: Draw Dominoes, Block Dominoes and All Fives. Play against 1 to 3 computer players.", "players": "2–4 players", "time": "15–30 min", "title": "Dominoes", "url": null, "id": "dominoes", "path": "games/dominoes.html", "cover": "covers/dominoes.jpg"}, {"addedAt": 1793362002000, "ages": "7+", "by": "Mr. Morris", "color": "#7a1f2a", "coverH": 1400, "coverW": 1000, "desc": "A deck of cards with three classics: War, Rummy and Crazy Eights. Use the classic deck or pick Hayden Minch's Animals of Spain deck. Play against computer players.", "players": "2–4 players", "time": "10–30 min", "title": "Card Table", "url": null, "id": "card-table", "path": "games/card-table.html", "cover": "covers/card-table.jpg"}, {"addedAt": 1793363000000, "ages": "8+", "by": "Mr. Morris", "color": "#7a4a24", "coverH": 1200, "coverW": 1200, "desc": "Full chess with castling, en passant and promotion. Play the computer on Easy, Medium or Hard, or play a friend on the same screen.", "players": "1–2 players", "time": "15–45 min", "title": "Chess Set", "url": null, "id": "chess-set", "path": "games/chess-set.html", "cover": "covers/chess-set.jpg"}, {"addedAt": 1793363001000, "ages": "6+", "by": "Mr. Morris", "color": "#b3102b", "coverH": 1200, "coverW": 1200, "desc": "Classic checkers with jumps, double jumps and kings. Play the computer on Easy, Medium or Hard, or play a friend.", "players": "1–2 players", "time": "10–20 min", "title": "Checkers", "url": null, "id": "checkers", "path": "games/checkers.html", "cover": "covers/checkers.jpg"}, {"addedAt": 1793363002000, "ages": "7+", "by": "Mr. Morris", "color": "#2f5f94", "coverH": 1024, "coverW": 1536, "desc": "A little lost. A big adventure. Pip, Sir Neigh, Stacks and Aggie race around the closet floor to find a Die, a Card and a Domino, then hurry home to the Game Box.", "players": "2–4 players", "time": "15–25 min", "title": "Spare Pieces", "url": null, "id": "spare-pieces", "path": "games/spare-pieces.html", "cover": "covers/spare-pieces.jpg"}, {"addedAt": 1793364000000, "ages": "6+", "by": "Mr. Morris", "color": "#2f6b4f", "coverH": 1200, "coverW": 1200, "desc": "Pull back and flick your winks into the pot. Land on someone else’s wink to cover it with a squop. Play friends or the computer.", "players": "2–4 players", "time": "10–20 min", "title": "Tiddlywinks", "url": null, "id": "tiddlywinks", "path": "games/tiddlywinks.html", "cover": "covers/tiddlywinks.jpg"}, {"addedAt": 1793364001000, "ages": "5+", "by": "Mr. Morris", "color": "#c0182a", "coverH": 1000, "coverW": 1400, "desc": "A caller that reads each number out loud, a card to dab, and computer players racing you to a line, four corners, a big X or blackout.", "players": "1–4 players", "time": "10–20 min", "title": "Bingo", "url": null, "id": "bingo", "path": "games/bingo.html", "cover": "covers/bingo.jpg"}, {"addedAt": 1793364002000, "ages": "6+", "by": "Mr. Morris", "color": "#8f6436", "coverH": 1200, "coverW": 1200, "desc": "Classic Ringer. Shoot from the edge of the ring and knock the marbles out to keep them. First to win 7 takes it.", "players": "2–4 players", "time": "10–20 min", "title": "Marbles", "url": null, "id": "marbles", "path": "games/marbles.html", "cover": "covers/marbles.jpg"}, {"addedAt": 1793364003000, "ages": "8+", "by": "Mr. Morris", "color": "#9a6e3c", "coverH": 1000, "coverW": 1000, "desc": "Just a box of spare dice… or is it? Take them all out and see what’s at the bottom.", "players": "1–4 players", "time": "15–30 min", "title": "Extra Dice", "url": null, "id": "extra-dice", "path": "games/extra-dice.html", "cover": "covers/extra-dice.jpg"}, {"addedAt": 1793937000000, "ages": "7+", "by": "Lydia Davis & Daisy Rainsburg", "color": "#ec6fa3", "coverH": 576, "coverW": 1024, "desc": "Race your bobble-head pet through the park, find rare (and very ugly) pets on green spaces, and dodge the red spaces that send you back to Start. First to The End wins the Comic Con Cat!", "players": "2–6 players", "time": "15–25 min", "title": "The Pet Collector", "url": null, "id": "pet-collector", "path": "games/pet-collector.html", "cover": "covers/pet-collector.jpg"}, {"addedAt": 1794241600000, "ages": "8+", "by": "Chett Lloyd & Jonathan Herrmann", "color": "#c8121e", "coverH": 781, "coverW": 854, "desc": "Two teams take turns batting and fielding. Flip a Batter card and a Fielder card at the same time: a Hit sends your runners around the bases, an Out cancels the hit, and 3 outs switch sides. First team to get all 4 batters home wins!", "players": "2 teams, up to 4 players each", "time": "15–25 min", "title": "Baseball Showdown", "url": null, "id": "baseball-showdown", "path": "games/baseball-showdown.html", "cover": "covers/baseball-showdown.jpg"}, {"addedAt": 1794326400000, "ages": "13+", "by": "Lillien", "color": "#d8232a", "coverH": 675, "coverW": 1200, "desc": "Race Kenny, Cartman, Kyle, Wendy and Stan through a snowy mountain town. There are no dice: draw a card each turn to move forward or back, land on green dice spaces to draw again, and be the first to reach the finish!", "players": "1–5 players + bots", "time": "20–40 min", "title": "South Park: Around Town", "url": null, "id": "south-park-around-town", "path": "games/south-park-around-town.html", "cover": "covers/south-park-around-town.jpg"}]</script>
+<script>
+const $ = s => document.querySelector(s);
+let db = null, assets = null, canEdit = false, games = [], query = '', current = null, editing = null;
+const htmlCache = new Map();
+
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c])); }
+function status(t) { $('#shelves').innerHTML = `<div class="status">${esc(t)}</div>`; }
+const coverUrl = g => g.cover || '';
+const ar = g => Math.max(.4, Math.min(2.2, (g.coverW && g.coverH) ? g.coverW / g.coverH : .75));
+
+/* ---------- messy closet ---------- */
+function hash(str) { let h = 2166136261; for (const c of String(str)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function cube(w, h, d, f) {
+  const side = (x) => `width:${d}px;height:${h}px;left:${(w - d) / 2}px;top:0;transform:rotateY(${x}deg) translateZ(${w / 2}px)`;
+  const cap = (x) => `width:${w}px;height:${d}px;left:0;top:${(h - d) / 2}px;transform:rotateX(${x}deg) translateZ(${h / 2}px)`;
+  return `<div class="cube" style="width:${w}px;height:${h}px;transform:${f.pose}">
+    <div style="width:${w}px;height:${h}px;left:0;top:0;transform:rotateY(180deg) translateZ(${d / 2}px);background:#1a120c"></div>
+    <div style="${cap(-90)};background:#120c08"></div>
+    <div style="${side(-90)}" class="${f.sideCls}">${f.side}</div>
+    <div style="${side(90)}" class="${f.sideCls}">${f.side}</div>
+    <div style="${cap(90)}" class="${f.topCls || ''}">${f.top}</div>
+    <div class="f-front ${f.frontCls || ''}" style="width:${w}px;height:${h}px;transform:translateZ(${d / 2}px)">${f.front}</div>
+  </div>`;
+}
+/* size a title so it fits its face: along = length of the text line, across = room for line height */
+const measureCtx = document.createElement('canvas').getContext('2d');
+function textW(s) { measureCtx.font = '900 100px Nunito, system-ui, sans-serif'; return measureCtx.measureText(s).width / 100; }
+function fitText(text, along, across, vertical) {
+  text = String(text); const room = along * .92;
+  let fs = Math.min(across * .7, room / Math.max(.5, textW(text))), out = esc(text);
+  const words = text.split(/\s+/);
+  if (fs < across * .45 && words.length > 1) {
+    let best = null;
+    for (let i = 1; i < words.length; i++) {
+      const a = words.slice(0, i).join(' '), b = words.slice(i).join(' ');
+      const w = Math.max(textW(a), textW(b));
+      if (!best || w < best.w) best = { w, a, b };
+    }
+    const fs2 = Math.min(across * .42, room / best.w);
+    if (fs2 > fs * 1.15) { fs = fs2; out = esc(best.a) + '<br>' + esc(best.b); }
+  }
+  fs = Math.max(7, Math.min(fs, 30));
+  return `<b style="font-size:${fs.toFixed(1)}px">${out}</b>`;
+}
+function inkFor(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return '#fff';
+  const n = parseInt(m[1], 16), lin = c => { c /= 255; return c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); };
+  const L = .2126 * lin(n >> 16 & 255) + .7152 * lin(n >> 8 & 255) + .0722 * lin(n & 255);
+  return L > .4 ? '#1d1719' : '#ffffff';
+}
+function boxHTML(g, kind, cw, r) {
+  const a = ar(g), title = esc(g.title), cover = `<img alt="" src="${coverUrl(g)}" loading="lazy">`;
+  if (kind === 'flat') {
+    const yaw = (r() < .5 ? -1 : 1) * (6 + r() * 10), cy = Math.cos(yaw * Math.PI / 180), sy = Math.abs(Math.sin(yaw * Math.PI / 180));
+    let w = Math.min(cw * .8, cw * .6 * Math.max(a, .7)), d = w / a; if (d > cw * .6) { d = cw * .6; w = d * a; }
+    const fs = Math.min(1, (cw * .88) / (w * cy + d * sy)); w *= fs; d *= fs; const h = Math.max(24, cw * .13);
+    return { w, h, ex:(w * cy + d * sy - w) / 2, drop:0, html: cube(w, h, d, { pose:`translateZ(${-d * .5}px) rotateY(${yaw}deg)`, front:fitText(g.title, w * .92, h), frontCls:'spine', side:'', sideCls:'spine', top:cover }) };
+  }
+  const zr = kind === 'lean' ? (r() < .5 ? -1 : 1) * (a > 1.1 ? 4 + r() * 4 : 7 + r() * 6) : (r() - .5) * 3;
+  const yr = kind === 'lean' ? (r() - .5) * 24 : (r() < .5 ? -1 : 1) * (18 + r() * 16);
+  const pose = kind === 'lean' ? `rotateZ(${zr}deg) rotateY(${yr}deg)` : `rotateY(${yr}deg) rotateZ(${zr}deg)`;
+  let h = cw * (.54 + r() * .1), w = h * a, d = cw * .17;
+  /* shrink the box until its tilted outline fits inside the cubby */
+  const rz = Math.abs(zr) * Math.PI / 180, ry = Math.abs(yr) * Math.PI / 180;
+  const outline = () => ({ bw:(w * Math.cos(ry) + d * Math.sin(ry)) * Math.cos(rz) + h * Math.sin(rz), bh:w * Math.sin(rz) + h * Math.cos(rz) });
+  let o = outline(); const fs = Math.min(1, (cw * .84) / o.bw, (cw * .7) / o.bh); w *= fs; h *= fs; d *= fs; o = outline();
+  return { w, h, ex:Math.max(0, (o.bw - w) / 2), drop:Math.max(0, (o.bh - h) / 2) + d * .15, html: cube(w, h, d, { pose, front:`${cover}<span class="basepart"></span><span class="lidline"></span>`, side:`${fitText(g.title, h * .8, d, true)}<span class="basepart"></span><span class="lidline"></span>`, sideCls:'spine v', top:'', topCls:'spine' }) };
+}
+function junkHTML(r, cw) {
+  const out = [], n = Math.floor(r() * 3), cols = ['#b3102b', '#2f5f94', '#2f6b3f', '#e8a93a', '#4a2b5e'];
+  for (let i = 0; i < n; i++) {
+    const k = r(), left = 6 + r() * 80, bottom = 4 + r() * 6, rot = (r() - .5) * 70, c = cols[Math.floor(r() * cols.length)];
+    const pos = `left:${left}%;bottom:${bottom}%;transform:rotate(${rot}deg);--c:${c}`;
+    if (k < .4) { const pip = { 1:[4], 2:[0,8], 3:[0,4,8], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8] }[1 + Math.floor(r() * 6)]; out.push(`<span class="junk die" style="${pos}">${[...Array(9)].map((_, j) => `<i class="${pip.includes(j) ? 'on' : ''}"></i>`).join('')}</span>`); }
+    else if (k < .75) out.push(`<span class="junk card" style="${pos}"></span>`);
+    else out.push(`<span class="junk pawn" style="${pos};transform:none"></span>`);
+  }
+  return out.join('');
+}
+const DECOYS = ['Lost & Found', 'Game Spinners', 'Jacks', 'Yo-Yos', 'Pick-Up Sticks', 'Spare Timers', 'Old Score Pads', 'Crayons'];
+function decoyHTML(r, cw, startY) {
+  const n = 1 + Math.floor(r() * 2), cols = ['#6b5a48', '#47606b', '#6b4848', '#4f6b47', '#5d4a6b'];
+  let html = '', y = startY;
+  for (let i = 0; i < n; i++) {
+    const w = cw * (.5 + r() * .3), h = Math.max(16, cw * (.08 + r() * .05)), d = cw * (.45 + r() * .2), c = cols[Math.floor(r() * cols.length)];
+    const left = Math.max(4, Math.min(cw - w - 4, (cw - w) / 2 + (r() - .5) * cw * .3));
+    const label = DECOYS[Math.floor(r() * DECOYS.length)];
+    html += `<div class="item decoy" aria-hidden="true" style="left:${left}px;bottom:${y}%;width:${w}px;height:${h}px;pointer-events:none;--spine:${c}"><span class="shadow3"></span>${cube(w, h, d, { pose:`translateZ(${-d * .5}px) rotateY(${(r() - .5) * 18}deg)`, front:fitText(label, w * .92, h), frontCls:'spine', side:'', sideCls:'spine', top:'', topCls:'spine' })}</div>`;
+    y += h / cw * 100 * .98;
+  }
+  return html;
+}
+function renderShelf() {
+  if (!games.length) { status(canEdit ? 'The closet is empty. Use “Add a game” to toss the first box in.' : 'No games in the closet yet. Check back soon!'); return; }
+  const wrap = $('#shelves'), fw = wrap.parentElement.clientWidth - 36;
+  const cols = fw < 520 ? 2 : fw < 860 ? 3 : 4, gap = 18, cw = (fw - gap * (cols - 1)) / cols;
+  const cubbies = Math.max(cols * 2, Math.ceil(games.length * 1.3 / cols) * cols);
+  const order = [...games].sort((a, b) => hash(a.id) - hash(b.id));
+  const slots = [...Array(cubbies)].map(() => []);
+  const r0 = rng(hash('closet' + cubbies));
+  const spots = [...Array(cubbies).keys()].sort(() => r0() - .5);
+  order.forEach((g, i) => {
+    let c = spots[i % cubbies];
+    if (i >= Math.ceil(cubbies * .7) || (r0() < .25 && i > 0)) { const full = spots.filter(s => slots[s].length && slots[s].length < 3); if (full.length) c = full[Math.floor(r0() * full.length)]; }
+    slots[c].push(g);
+  });
+  const grid = document.createElement('div'); grid.className = 'cubbies'; grid.style.setProperty('--cols', cols);
+  slots.forEach((list, ci) => {
+    const cell = document.createElement('div'); cell.className = 'cubby';
+    const r = rng(hash('cubby' + ci + list.map(g => g.id).join()));
+    let html = junkHTML(r, cw) + (list.length ? '' : junkHTML(r, cw)), stackY = 11;
+    if (!list.length && r() < .65) html += decoyHTML(r, cw, 11);
+    const standLast = list.length > 1 && r() < .55;
+    list.forEach((g, k) => {
+      const solo = list.length === 1;
+      const kind = solo ? (r() < .5 ? 'stand' : r() < .5 ? 'lean' : 'flat') : (standLast && k === list.length - 1 ? 'stand' : 'flat');
+      const b = boxHTML(g, kind, cw, r);
+      let left, bottom;
+      const lo = 6 + b.ex, hi = Math.max(lo, cw - b.w - 6 - b.ex);
+      if (kind === 'flat') { left = Math.max(lo, Math.min(hi, (standLast ? cw * .08 : (cw - b.w) / 2) + (r() - .5) * 18)); bottom = stackY; stackY += b.h / cw * 100 * .98; }
+      else { left = standLast ? hi : lo + r() * (hi - lo); bottom = 9 + b.drop / cw * 100; }
+      const q = query && (g.title + ' ' + (g.by || '') + ' ' + (g.desc || '')).toLowerCase().includes(query);
+      html += `<div class="item${query ? (q ? ' match' : ' dim') : ''}" role="button" tabindex="0" aria-label="Unbox ${esc(g.title)}" data-id="${esc(g.id)}" style="left:${left}px;bottom:${bottom}%;width:${b.w}px;height:${b.h}px;z-index:${10 + k};--spine:${esc(g.color || '#b3102b')};--spineInk:${inkFor(g.color || '#b3102b')};--spineShadow:${inkFor(g.color || '#b3102b') === '#ffffff' ? '0 0 1px rgba(0,0,0,.9), 0 1px 2px rgba(0,0,0,.8)' : '0 0 1px rgba(255,255,255,.6)'}"><span class="shadow3"></span>${b.html}<span class="tag">${esc(g.title)}</span></div>`;
+    });
+    cell.innerHTML = html; grid.appendChild(cell);
+  });
+  wrap.innerHTML = ''; wrap.appendChild(grid);
+  wrap.querySelectorAll('.item').forEach(el => {
+    const g = games.find(x => x.id === el.dataset.id);
+    el.onclick = () => openBox(g);
+    el.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBox(g); } };
+  });
+}
+let rsT = null;
+new ResizeObserver(() => { clearTimeout(rsT); rsT = setTimeout(() => { if (games.length) renderShelf(); }, 120); }).observe(document.body);
+$('#search').oninput = e => { query = e.target.value.trim().toLowerCase(); renderShelf(); };
+function openCloset() { const c = $('#closet'); if (c.classList.contains('open')) return; c.classList.add('open'); setTimeout(() => { c.hidden = true; }, 2000); }
+$('#openCloset').onclick = openCloset;
+$('#closet').querySelectorAll('.door').forEach(d => d.onclick = openCloset);
+$('#openCloset').focus();
+
+/* ---------- unboxing ---------- */
+function openBox(g) {
+  current = g;
+  const box = $('#ubBox'), st = $('#ubStage');
+  box.style.setProperty('--ar', ar(g)); box.style.setProperty('--spine', g.color || '#b3102b');
+  $('#ubCover').src = coverUrl(g); $('#ubCover').alt = `${g.title} box cover`;
+  $('#ubTrayTitle').textContent = g.title; $('#ubTitle').textContent = g.title;
+  $('#ubDesc').textContent = g.desc || '';
+  $('#ubFacts').innerHTML = [g.players, g.time, g.ages && 'Ages ' + g.ages, g.by && 'By ' + g.by].filter(Boolean).map(f => `<span>${esc(f)}</span>`).join('');
+  $('#ubEdit').hidden = !canEdit;
+  box.classList.remove('open', 'enter'); st.classList.remove('open'); void box.offsetWidth;
+  $('#unbox').classList.add('on'); box.classList.add('enter');
+  setTimeout(() => { box.classList.add('open'); st.classList.add('open'); }, 750);
+  setTimeout(() => $('#playBtn').focus(), 1300);
+}
+function closeBox() { $('#unbox').classList.remove('on'); current = null; }
+$('#backBtn').onclick = () => { const box = $('#ubBox'); box.classList.remove('open'); $('#ubStage').classList.remove('open'); setTimeout(closeBox, 500); };
+$('#unbox').onclick = e => { if (e.target.id === 'unbox') $('#backBtn').click(); };
+
+async function fetchGame(g) {
+  if (htmlCache.has(g.gameId)) return htmlCache.get(g.gameId);
+  const r = await fetch('/_blob/' + g.gameId); if (!r.ok) throw new Error('load');
+  const t = await r.text(); htmlCache.set(g.gameId, t); return t;
+}
+$('#playBtn').onclick = async () => {
+  const g = current; if (!g) return;
+  if (g.url && !g.gameId) { window.open(g.url, '_blank', 'noopener'); return; }
+  $('#pTitle').textContent = g.title; $('#player').classList.add('on'); $('#loading').hidden = false; $('#loading').textContent = 'Setting up the board…';
+  closeBox();
+  $('#frame').onload = () => { $('#loading').hidden = true; $('#frame').focus(); }; $('#frame').src = g.path;
+};
+$('#closeGame').onclick = () => { $('#frame').src = 'about:blank'; $('#player').classList.remove('on'); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); };
+$('#fsBtn').onclick = () => { const p = $('#player'); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else if (p.requestFullscreen) p.requestFullscreen().catch(() => {}); };
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if ($('#formOv').classList.contains('on')) $('#formOv').classList.remove('on');
+  else if ($('#unbox').classList.contains('on')) $('#backBtn').click();
+});
+
+/* ---------- add / edit ---------- */
+let coverDims = null;
+function srcMode() { return document.querySelector('input[name=src]:checked').value; }
+document.querySelectorAll('input[name=src]').forEach(r => r.onchange = () => { $('#fFileWrap').hidden = srcMode() !== 'file'; $('#fLinkWrap').hidden = srcMode() !== 'link'; });
+/* pick the cover's strongest main color for the box sides */
+function mainColor(im) {
+  try {
+    const c = document.createElement('canvas'); c.width = c.height = 48; const x = c.getContext('2d');
+    x.drawImage(im, 0, 0, 48, 48); const d = x.getImageData(0, 0, 48, 48).data, bins = new Map();
+    for (let i = 0; i < d.length; i += 4) {
+      const r = d[i], g = d[i + 1], b = d[i + 2], mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 510, s = mx === mn ? 0 : (mx - mn) / (255 - Math.abs(mx + mn - 255));
+      if (l < .12 || l > .9) continue;
+      const key = (r >> 5) << 6 | (g >> 5) << 3 | (b >> 5), ch = (mx - mn) / 255, w = .05 + ch * ch * ch * 6;
+      const e = bins.get(key) || { w:0, r:0, g:0, b:0 }; e.w += w; e.r += r * w; e.g += g * w; e.b += b * w; bins.set(key, e);
+    }
+    let best = null; bins.forEach(e => { if (!best || e.w > best.w) best = e; });
+    if (!best) return null;
+    let r = best.r / best.w, g = best.g / best.w, b = best.b / best.w;
+    const mx = Math.max(r, g, b); if (mx > 210) { const k = 210 / mx; r *= k; g *= k; b *= k; }
+    return '#' + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+  } catch (e) { return null; }
+}
+$('#fCover').onchange = () => {
+  const f = $('#fCover').files[0]; if (!f) return;
+  const url = URL.createObjectURL(f), im = new Image();
+  im.onload = () => { coverDims = { w:im.naturalWidth, h:im.naturalHeight }; $('#fCoverPrev').src = url; $('#fCoverPrev').hidden = false; const c = mainColor(im); if (c) { $('#fColor').value = c; $('#fColorNote').textContent = 'Matched to the cover. Change it if you like.'; } };
+  im.src = url;
+};
+function openForm(g) {
+  editing = g || null; coverDims = null; $('#form').reset(); $('#fErr').hidden = true;
+  $('#fTitle').textContent = g ? 'Edit game' : 'Add a game';
+  $('#fSave').textContent = g ? 'Save changes' : 'Put it in the closet';
+  $('#fName').value = g?.title || ''; $('#fDesc').value = g?.desc || ''; $('#fPlayers').value = g?.players || '';
+  $('#fTime').value = g?.time || ''; $('#fAges').value = g?.ages || ''; $('#fBy').value = g?.by || ''; $('#fColor').value = g?.color || '#b3102b';
+  $('#fCoverPrev').hidden = !g; if (g) $('#fCoverPrev').src = coverUrl(g);
+  const link = g && g.url && !g.gameId; document.querySelector(`input[name=src][value=${link ? 'link' : 'file'}]`).checked = true;
+  $('#fLink').value = g?.url || ''; $('#fFileWrap').hidden = !!link; $('#fLinkWrap').hidden = !link;
+  $('#fFileNote').textContent = g && g.gameId ? 'Leave empty to keep the current game file.' : '';
+  $('#formOv').classList.add('on'); $('#fName').focus();
+}
+$('#addBtn').onclick = () => openForm(null);
+$('#editBtn').onclick = () => { const g = current; closeBox(); openForm(g); };
+$('#fCancel').onclick = () => $('#formOv').classList.remove('on');
+$('#delBtn').onclick = async () => {
+  const g = current; if (!g || !confirm(`Remove “${g.title}” from the closet? Students won’t be able to play it anymore.`)) return;
+  try {
+    await db.doc('games/' + g.id).delete();
+    for (const id of [g.coverId, g.gameId]) if (id && assets) await assets.delete(id).catch(() => {});
+    closeBox();
+  } catch (e) { alert('That game couldn’t be removed. Please try again.'); }
+};
+function fail(t) { $('#fErr').textContent = t; $('#fErr').hidden = false; $('#fSave').disabled = false; $('#fSave').textContent = editing ? 'Save changes' : 'Put it in the closet'; }
+$('#form').onsubmit = async e => {
+  e.preventDefault();
+  const title = $('#fName').value.trim(); if (!title) return fail('Give the game a title.');
+  const coverFile = $('#fCover').files[0], gameFile = $('#fFile').files[0], mode = srcMode(), link = $('#fLink').value.trim();
+  if (!editing && !coverFile) return fail('Choose a box cover image.');
+  if (mode === 'file' && !gameFile && !(editing && editing.gameId)) return fail('Choose the game’s HTML file.');
+  if (mode === 'link' && !/^https:\/\//.test(link)) return fail('Paste a full link that starts with https://');
+  if (!assets) return fail('Uploading isn’t available in this view.');
+  $('#fSave').disabled = true; $('#fSave').textContent = 'Uploading…';
+  try {
+    const body = { title, desc:$('#fDesc').value.trim(), players:$('#fPlayers').value.trim(), time:$('#fTime').value.trim(), ages:$('#fAges').value.trim(), by:$('#fBy').value.trim(), color:$('#fColor').value };
+    const old = editing || {};
+    if (coverFile) { const r = await assets.upload(coverFile); body.coverId = r.id; body.coverW = coverDims?.w || 3; body.coverH = coverDims?.h || 4; }
+    else { body.coverId = old.coverId; body.coverW = old.coverW; body.coverH = old.coverH; }
+    if (mode === 'file') {
+      if (gameFile) { const text = await gameFile.text(); const r = await assets.upload(new Blob([text], { type:'text/plain' }), { type:'text/plain' }); body.gameId = r.id; }
+      else body.gameId = old.gameId;
+      body.url = null;
+    } else { body.url = link; body.gameId = null; }
+    body.addedAt = old.addedAt || Date.now();
+    const id = editing ? editing.id : 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    await db.doc('games/' + id).set(body);
+    if (assets) {
+      if (coverFile && old.coverId) assets.delete(old.coverId).catch(() => {});
+      if (old.gameId && body.gameId !== old.gameId) { assets.delete(old.gameId).catch(() => {}); htmlCache.delete(old.gameId); }
+    }
+    $('#formOv').classList.remove('on');
+  } catch (err) {
+    const c = err && err.code;
+    fail(c === 'too_large' ? 'That file is too big (20 MB max).' : c === 'unsupported_type' ? 'That file type can’t be uploaded.' : c === 'not_granted' || c === 'permission_denied' ? 'You don’t have permission to add games here.' : 'Something went wrong while saving. Please try again.');
+    return;
+  }
+  $('#fSave').disabled = false;
+};
+
+/* ---------- start ---------- */
+(() => {
+  games = JSON.parse(document.getElementById('bundle').textContent);
+  canEdit = false; $('#addBtn').hidden = true;
+  if (document.fonts) document.fonts.ready.then(() => renderShelf());
+  renderShelf();
+})();
+</script>
+</body>
+</html>

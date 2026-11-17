@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Checkers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{ --gold:#e8a93a; --cream:#f6efe1; color-scheme:dark; }
+*,*::before,*::after{ box-sizing:border-box; }
+html,body{ margin:0; height:100%; }
+body{ font-family:Nunito, system-ui, sans-serif; color:var(--cream); background:radial-gradient(ellipse at 50% 30%, #3b1e22, #140a0b 75%); display:flex; flex-direction:column; }
+button{ font:inherit; cursor:pointer; }
+:focus-visible{ outline:3px solid var(--gold); outline-offset:2px; }
+.btn{ border:2px solid var(--cream); background:transparent; color:var(--cream); border-radius:12px; padding:8px 14px; font-weight:900; }
+.btn.primary{ background:var(--gold); border-color:var(--gold); color:#1d1719; }
+.btn[aria-pressed="true"]{ background:var(--cream); color:#1d1719; }
+h1{ font-family:Bungee, Impact, sans-serif; font-weight:400; margin:0; font-size:22px; margin-right:auto; }
+.top{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 14px; background:rgba(0,0,0,.35); }
+.row{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.wrap{ flex:1; min-height:0; display:flex; gap:22px; align-items:center; justify-content:center; padding:14px; flex-wrap:wrap; }
+#board{ --sq:min(10.5vh, 10.5vw, 76px); display:grid; grid-template-columns:repeat(8, var(--sq)); grid-template-rows:repeat(8, var(--sq)); border:10px solid #2a1a12; border-radius:8px; box-shadow:0 20px 50px rgba(0,0,0,.6); }
+.sq{ position:relative; border:0; padding:0; display:flex; align-items:center; justify-content:center; }
+.sq.l{ background:#f0dcc0; } .sq.d{ background:#3d5c47; }
+.sq.last{ box-shadow:inset 0 0 0 100px rgba(232,169,58,.3); }
+.sq.tgt::after{ content:""; position:absolute; width:30%; height:30%; border-radius:50%; background:rgba(232,169,58,.85); }
+.pc{ width:78%; height:78%; border-radius:50%; position:relative; pointer-events:none; box-shadow:0 5px 0 rgba(0,0,0,.45), 0 8px 12px rgba(0,0,0,.4); }
+.pc.r{ background:radial-gradient(circle at 40% 35%, #f0505c, #b3102b 60%, #7a0a1d); }
+.pc.b{ background:radial-gradient(circle at 40% 35%, #555, #1d1719 60%, #000); }
+.pc::before{ content:""; position:absolute; inset:16%; border-radius:50%; border:3px solid rgba(255,255,255,.25); }
+.pc.k::after{ content:"♛"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:calc(var(--sq) * .38); color:#e8a93a; text-shadow:0 1px 2px rgba(0,0,0,.7); }
+.sq.sel .pc{ box-shadow:0 0 0 4px #4fc3f7, 0 8px 12px rgba(0,0,0,.4); }
+.sq.can .pc{ box-shadow:0 0 0 3px var(--gold), 0 5px 0 rgba(0,0,0,.45); }
+.side{ width:250px; max-width:92vw; display:flex; flex-direction:column; gap:12px; }
+.panel{ background:rgba(0,0,0,.3); border-radius:14px; padding:12px; }
+.status{ font-weight:900; font-size:18px; min-height:48px; }
+.ov{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:20; }
+.ov.on{ display:flex; }
+.ov .panel{ background:#241517; padding:24px; text-align:center; display:flex; flex-direction:column; gap:12px; align-items:center; max-width:380px; }
+.ov h2{ font-family:Bungee, Impact, sans-serif; font-weight:400; margin:0; font-size:30px; }
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>Checkers</h1>
+  <span class="row" role="group" aria-label="Opponent"><button class="btn" id="mCpu">Vs computer</button><button class="btn" id="m2p">2 players</button></span>
+  <span class="row" id="diffRow" role="group" aria-label="Difficulty"><button class="btn" data-d="2">Easy</button><button class="btn" data-d="5">Medium</button><button class="btn" data-d="8">Hard</button></span>
+  <button class="btn" id="undo">Undo</button>
+  <button class="btn primary" id="newg">New game</button>
+</div>
+<div class="wrap">
+  <div id="board" role="grid" aria-label="Checkers board"></div>
+  <div class="side">
+    <div class="panel status" id="status" aria-live="polite"></div>
+    <div class="panel" id="count"></div>
+    <div class="panel" style="font-size:14px;line-height:1.5"><b>Rules</b><br>Move forward diagonally. Jump over an opponent to capture it, and keep jumping if you can. If a jump is available you must take it. Reach the far side to become a king, which can move both ways.</div>
+  </div>
+</div>
+<div class="ov" id="endOv"><div class="panel"><h2 id="endT"></h2><p id="endP"></p><button class="btn primary" id="endBtn">Play again</button></div></div>
+<script>
+const $ = s => document.querySelector(s);
+let B, turn, quiet = 0, mode = 'cpu', diff = 5, sel = null, chain = null, last = [], hist = [], thinking = false, over = false;
+try { const p = JSON.parse(localStorage.getItem('ck-prefs') || '{}'); mode = p.mode || mode; diff = p.diff || diff; } catch (e) {}
+// pieces: 'r','R'(king) red = you, moves up; 'b','B' black moves down
+function init() { B = Array(64).fill(null); for (let i = 0; i < 64; i++) { const r = i >> 3, c = i & 7; if ((r + c) % 2) { if (r < 3) B[i] = 'b'; else if (r > 4) B[i] = 'r'; } } turn = 'r'; quiet = 0; sel = null; chain = null; last = []; hist = []; over = false; thinking = false; }
+const side = p => p && p.toLowerCase(), king = p => p && p === p.toUpperCase();
+const on = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+function dirs(p) { if (king(p)) return [[1,1],[1,-1],[-1,1],[-1,-1]]; return side(p) === 'r' ? [[-1,1],[-1,-1]] : [[1,1],[1,-1]]; }
+// full move = sequence of squares; captures list
+function jumpsFrom(b, i, p) {
+  const out = [], r = i >> 3, c = i & 7;
+  dirs(p).forEach(([dr, dc]) => { const mr = r + dr, mc = c + dc, tr = r + 2 * dr, tc = c + 2 * dc; if (on(tr, tc) && b[mr * 8 + mc] && side(b[mr * 8 + mc]) !== side(p) && !b[tr * 8 + tc]) out.push({ to:tr * 8 + tc, cap:mr * 8 + mc }); });
+  return out;
+}
+function seqs(b, i, p, path, caps, out) {
+  const js = jumpsFrom(b, i, p); let ext = false;
+  for (const j of js) {
+    const nb = b.slice(); nb[j.to] = p; nb[i] = null; nb[j.cap] = null;
+    const crowned = !king(p) && ((side(p) === 'r' && j.to < 8) || (side(p) === 'b' && j.to >= 56));
+    ext = true;
+    if (crowned) out.push({ path:[...path, j.to], caps:[...caps, j.cap] });
+    else seqs(nb, j.to, p, [...path, j.to], [...caps, j.cap], out);
+  }
+  if (!ext && caps.length) out.push({ path, caps });
+}
+function moves(b, s) {
+  const jumps = [], steps = [];
+  for (let i = 0; i < 64; i++) { const p = b[i]; if (!p || side(p) !== s) continue;
+    seqs(b, i, p, [i], [], jumps);
+    dirs(p).forEach(([dr, dc]) => { const r = (i >> 3) + dr, c = (i & 7) + dc; if (on(r, c) && !b[r * 8 + c]) steps.push({ path:[i, r * 8 + c], caps:[] }); });
+  }
+  return jumps.length ? jumps : steps;
+}
+function apply(b, m) {
+  const nb = b.slice(), from = m.path[0], to = m.path[m.path.length - 1]; let p = nb[from]; nb[from] = null; m.caps.forEach(c => nb[c] = null);
+  if ((side(p) === 'r' && to < 8) || (side(p) === 'b' && to >= 56)) p = p.toUpperCase(); nb[to] = p; return nb;
+}
+function evalB(b, s) { let v = 0; for (let i = 0; i < 64; i++) { const p = b[i]; if (!p) continue; const r = i >> 3; let w = king(p) ? 175 : 100 + (side(p) === 'r' ? (7 - r) : r) * 4; if ((i & 7) === 0 || (i & 7) === 7) w += 4; v += side(p) === s ? w : -w; } return v; }
+function negamax(b, s, d, a, bt) {
+  const ms = moves(b, s); if (!ms.length) return -10000 - d; if (!d) return evalB(b, s);
+  const o = s === 'r' ? 'b' : 'r';
+  for (const m of ms) { const v = -negamax(apply(b, m), o, d - 1, -bt, -a); if (v >= bt) return bt; if (v > a) a = v; } return a;
+}
+function best(b, s, d) { const ms = moves(b, s).sort(() => Math.random() - .5); let bm = null, a = -Infinity; const o = s === 'r' ? 'b' : 'r'; for (const m of ms) { const v = -negamax(apply(b, m), o, d - 1, -Infinity, -a); if (v > a || !bm) { a = v; bm = m; } } return bm; }
+
+function commit(m) {
+  hist.push({ B:B.slice(), turn, quiet }); quiet = m.caps.length || !king(B[m.path[0]]) ? 0 : quiet + 1; B = apply(B, m); last = m.path; turn = turn === 'r' ? 'b' : 'r'; sel = null; chain = null; tone(m.caps.length ? 320 : 560);
+  render(); if (window.__cam) window.__cam.focusEl($('#board').children[m.path[m.path.length - 1]], 1.7, 1000);
+  if (endCheck()) return;
+  if (mode === 'cpu' && turn === 'b') { thinking = true; render(); setTimeout(() => { const bm = best(B, 'b', diff); thinking = false; if (bm) commit(bm); }, 450); }
+}
+function endCheck() {
+  if (quiet >= 40) { over = true; $('#endT').textContent = 'It’s a draw'; $('#endP').textContent = '40 king moves in a row with no captures.'; setTimeout(() => $('#endOv').classList.add('on'), 500); render(); return true; }
+  if (moves(B, turn).length) return false; over = true;
+  const loser = turn, winRed = loser === 'b';
+  $('#endT').textContent = mode === 'cpu' ? (winRed ? 'You win!' : 'The computer wins') : (winRed ? 'Red wins!' : 'Black wins!');
+  $('#endP').textContent = (loser === 'r' ? 'Red' : 'Black') + ' has no moves left.';
+  setTimeout(() => $('#endOv').classList.add('on'), 500); render(); return true;
+}
+function click(i) {
+  if (over || thinking || (mode === 'cpu' && turn !== 'r')) return;
+  const all = moves(B, turn);
+  const prefix = chain || (sel !== null ? [sel] : null);
+  if (prefix) {
+    const cont = all.filter(m => prefix.every((x, k) => m.path[k] === x) && m.path[prefix.length] === i);
+    if (cont.length) {
+      const np = [...prefix, i], done = cont.find(m => m.path.length === np.length);
+      if (done && cont.length === 1) return commit(done);
+      if (done && cont.every(m => m.path.length === np.length)) return commit(done);
+      chain = np; sel = i; render(); return;
+    }
+    if (chain) return;
+  }
+  sel = B[i] && side(B[i]) === turn && all.some(m => m.path[0] === i) ? i : null; render();
+}
+function render() {
+  const all = moves(B, turn), prefix = chain || (sel !== null ? [sel] : null);
+  const tg = prefix ? all.filter(m => prefix.every((x, k) => m.path[k] === x)).map(m => m.path[prefix.length]).filter(x => x !== undefined) : [];
+  const starts = new Set(all.map(m => m.path[0]));
+  const myTurn = !over && !thinking && !(mode === 'cpu' && turn !== 'r');
+  const el = $('#board'); el.innerHTML = '';
+  for (let i = 0; i < 64; i++) {
+    const r = i >> 3, c = i & 7, p = B[i], b = document.createElement('button');
+    b.className = 'sq ' + ((r + c) % 2 ? 'd' : 'l') + (last.includes(i) ? ' last' : '') + (tg.includes(i) ? ' tgt' : '') + (sel === i ? ' sel' : '') + (myTurn && !prefix && starts.has(i) ? ' can' : '');
+    b.setAttribute('aria-label', `Row ${8 - r}, column ${c + 1}` + (p ? ` ${side(p) === 'r' ? 'red' : 'black'} ${king(p) ? 'king' : 'piece'}` : ''));
+    if (p) b.innerHTML = `<span class="pc ${side(p)}${king(p) ? ' k' : ''}"></span>`;
+    b.onclick = () => click(i); el.appendChild(b);
+  }
+  const jump = all.length && all[0].caps.length;
+  $('#status').textContent = over ? 'Game over' : thinking ? 'The computer is thinking…' : (mode === 'cpu' ? 'Your move (red)' : (turn === 'r' ? 'Red' : 'Black') + ' to move') + (jump && myTurn ? ' · You must jump!' : '');
+  const n = s => B.filter(p => p && side(p) === s).length;
+  $('#count').innerHTML = `<b>Pieces left</b><br>Red: ${n('r')} · Black: ${n('b')}`;
+  $('#mCpu').setAttribute('aria-pressed', mode === 'cpu'); $('#m2p').setAttribute('aria-pressed', mode === '2p');
+  document.querySelectorAll('#diffRow button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.d === diff)); $('#diffRow').hidden = mode !== 'cpu';
+}
+let AC; function tone(f) { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const o = AC.createOscillator(), g = AC.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.08, AC.currentTime); g.gain.exponentialRampToValueAtTime(.001, AC.currentTime + .12); o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime + .13); } catch (e) {} }
+const save = () => { try { localStorage.setItem('ck-prefs', JSON.stringify({ mode, diff })); } catch (e) {} };
+function newGame() { init(); $('#endOv').classList.remove('on'); render(); }
+$('#newg').onclick = newGame; $('#endBtn').onclick = newGame;
+$('#mCpu').onclick = () => { mode = 'cpu'; save(); newGame(); }; $('#m2p').onclick = () => { mode = '2p'; save(); newGame(); };
+document.querySelectorAll('#diffRow button').forEach(b => b.onclick = () => { diff = +b.dataset.d; save(); render(); });
+$('#undo').onclick = () => { if (thinking || !hist.length) return; let h = hist.pop(); if (mode === 'cpu' && h.turn === 'b' && hist.length) h = hist.pop(); B = h.B; turn = h.turn; quiet = h.quiet || 0; sel = null; chain = null; last = []; over = false; render(); };
+newGame();
+</script>
+<script>window.__V3 = { key:'checkers', top:'.top', before:'#newg', stage:'.wrap', target:'#board', tilt:48, spin:true, followable:true, focusZoom:1.7, preserve:['.sq'], extraCss:'.wrap{ overflow:hidden; } .top{ position:relative; z-index:10; } .is3d #board .sq{ transform:translateZ(1px); } .is3d #board .pc{ transform:translateZ(6px); box-shadow:0 3px 0 #0006, 0 6px 0 #0005, 0 10px 14px #0007; }' };</script>
+<script>
+/* 3D view, follow camera and zoom add-on. Config: window.__V3 */
+(function () {
+  const C = window.__V3, root = document.documentElement;
+  const st = { on:false, tilt:C.tilt || 50, spin:0, zoom:1, follow:true };
+  try { Object.assign(st, JSON.parse(localStorage.getItem('v3-' + C.key) || '{}')); } catch (e) {}
+  st.zoom = Math.max(1, Math.min(3, st.zoom || 1));
+  const cam = { z:1, x:null, y:null, px:0, py:0 };
+  const TF = C.transform || 'translate(var(--px, 0px), var(--py, 0px)) scale(var(--zoom, 1)) rotateX(var(--tilt, 0deg)) rotateZ(var(--spin, 0deg)) translate(var(--cx, 0px), var(--cy, 0px))';
+  const css = document.createElement('style');
+  css.textContent = `
+${C.stage}{ perspective:${C.persp || 1700}px; perspective-origin:50% ${C.originY || '35%'}; }
+${C.target}{ transform-style:preserve-3d; transition:transform .75s cubic-bezier(.3,.7,.2,1); transform:${TF}; }
+${C.target}.v3-follow{ transition:transform .5s ease-out; }
+${(C.preserve || []).length ? C.preserve.join(',') + '{ transform-style:preserve-3d; }' : ''}
+${C.billboard ? `${C.billboard}{ transform:rotateZ(calc(var(--spin, 0deg) * -1)) rotateX(calc(var(--tilt, 0deg) * -1)); transform-origin:${C.bbOrigin || '50% 90%'}; }` : ''}
+.v3-drag ${C.target}, .v3-drag ${C.billboard || '.__none'}{ transition:none !important; }
+${C.extraCss || ''}
+@media (prefers-reduced-motion: reduce){ ${C.target}{ transition:none !important; } }`;
+  document.head.appendChild(css);
+  const bar = document.querySelector(C.top), where = C.before ? bar.querySelector(C.before) : null;
+  const mk = (label, aria) => { const b = document.createElement('button'); b.className = C.btnClass || 'btn'; b.textContent = label; if (aria) b.setAttribute('aria-label', aria); (where ? bar.insertBefore(b, where) : bar.appendChild(b)); return b; };
+  const tgl = mk('3D view'), rl = mk('⟲', 'Rotate left'), rr = mk('⟳', 'Rotate right');
+  const zo = mk('−', 'Zoom out'), zi = mk('+', 'Zoom in');
+  const fol = C.followable ? mk('Follow camera') : null;
+  const tgt = () => document.querySelector(C.target);
+  function setVars() {
+    const el = tgt(); if (!el) return;
+    const z = Math.max(st.zoom, cam.z);
+    root.style.setProperty('--tilt', st.on ? st.tilt + 'deg' : '0deg');
+    root.style.setProperty('--spin', st.on && C.spin ? st.spin + 'deg' : '0deg');
+    root.style.setProperty('--zoom', z);
+    const w = el.offsetWidth, h = el.offsetHeight;
+    const fx = cam.x == null ? w / 2 : cam.x, fy = cam.y == null ? h / 2 : cam.y;
+    root.style.setProperty('--cx', (w / 2 - fx) + 'px'); root.style.setProperty('--cy', (h / 2 - fy) + 'px');
+    root.style.setProperty('--px', cam.px + 'px'); root.style.setProperty('--py', cam.py + 'px');
+  }
+  function apply() {
+    root.classList.toggle('is3d', st.on);
+    tgl.textContent = st.on ? '2D view' : '3D view'; tgl.setAttribute('aria-pressed', st.on);
+    rl.hidden = rr.hidden = !(st.on && C.spin);
+    if (fol) { fol.setAttribute('aria-pressed', st.follow); fol.textContent = st.follow ? 'Follow camera: on' : 'Follow camera: off'; }
+    zo.disabled = st.zoom <= 1; zi.disabled = st.zoom >= 3;
+    try { localStorage.setItem('v3-' + C.key, JSON.stringify(st)); } catch (e) {}
+    setVars(); if (C.onChange) C.onChange(st);
+  }
+  tgl.onclick = () => { st.on = !st.on; apply(); };
+  rl.onclick = () => { st.spin -= 45; apply(); };
+  rr.onclick = () => { st.spin += 45; apply(); };
+  zi.onclick = () => { st.zoom = Math.min(3, +(st.zoom + .25).toFixed(2)); apply(); };
+  zo.onclick = () => { st.zoom = Math.max(1, +(st.zoom - .25).toFixed(2)); if (st.zoom === 1) { cam.px = cam.py = 0; } apply(); };
+  if (fol) fol.onclick = () => { st.follow = !st.follow; if (!st.follow) api.wide(); apply(); };
+  function localPos(el) {
+    const T = tgt(); let x = el.offsetWidth / 2, y = el.offsetHeight / 2, n = el;
+    while (n && n !== T) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; if (n && !T.contains(n) && n !== T) break; }
+    return [x, y];
+  }
+  let backT = null;
+  const api = window.__cam = {
+    focus(x, y, z, follow) { if (!st.follow || !C.followable) return; clearTimeout(backT); cam.x = x; cam.y = y; cam.z = z || C.focusZoom || 1.8; tgt().classList.toggle('v3-follow', !!follow); setVars(); },
+    focusEl(el, z, back) { if (!el || !st.follow || !C.followable) return; const [x, y] = localPos(el); api.focus(x, y, z); if (back) { clearTimeout(backT); backT = setTimeout(api.wide, back); } },
+    wide() { clearTimeout(backT); cam.x = cam.y = null; cam.z = 1; const el = tgt(); if (el) el.classList.remove('v3-follow'); setVars(); },
+    state:st, cam,
+    pan(px, py) { cam.px = px; cam.py = py; setVars(); },
+    zoomBy(dz) { st.zoom = Math.max(1, Math.min(3, +(st.zoom + dz).toFixed(2))); if (st.zoom === 1) cam.px = cam.py = 0; apply(); }
+  };
+  if (C.drag) {
+    const stage = document.querySelector(C.stage); let d = null;
+    stage.addEventListener('pointerdown', e => { if (!st.on || e.target.closest('button, input, .no-orbit')) return; d = { x:e.clientX, y:e.clientY, spin:st.spin, tilt:st.tilt }; stage.setPointerCapture(e.pointerId); root.classList.add('v3-drag'); });
+    stage.addEventListener('pointermove', e => { if (!d) return; if (C.spin) st.spin = d.spin + (e.clientX - d.x) * .35; st.tilt = Math.max(20, Math.min(68, d.tilt - (e.clientY - d.y) * .2)); apply(); });
+    const end = () => { if (d) { d = null; root.classList.remove('v3-drag'); apply(); } };
+    stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  }
+  window.__v3 = st;
+  new ResizeObserver(setVars).observe(document.body);
+  apply();
+})();
+
+</script>
+</body>
+</html>
