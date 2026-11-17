@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Color Crash</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{ --gold:#f2b632; --cream:#f8f2e6; --ink:#16131a;
+  --r:#e2283b; --b:#2563d9; --g:#1f9d55; --y:#f2b632; --w:#16131a; color-scheme:dark; }
+*,*::before,*::after{ box-sizing:border-box; }
+html,body{ margin:0; height:100%; }
+body{ font-family:Nunito, system-ui, sans-serif; color:var(--cream); background:radial-gradient(ellipse at 50% 30%, #3a2350, #120a1c 80%); display:flex; flex-direction:column; overflow:hidden; }
+button{ font:inherit; cursor:pointer; }
+[hidden]{ display:none !important; }
+:focus-visible{ outline:3px solid var(--gold); outline-offset:2px; }
+.btn{ border:2px solid var(--cream); background:transparent; color:var(--cream); border-radius:12px; padding:8px 14px; font-weight:900; }
+.btn.primary{ background:var(--gold); border-color:var(--gold); color:var(--ink); }
+.btn[aria-pressed="true"]{ background:var(--cream); color:var(--ink); }
+.btn:disabled{ opacity:.4; cursor:default; }
+h1{ font-family:Bungee, Impact, sans-serif; font-weight:400; margin:0; font-size:22px; margin-right:auto; letter-spacing:.5px; }
+h1 span:nth-child(1){ color:var(--r); } h1 span:nth-child(2){ color:var(--y); }
+.top{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 14px; background:rgba(0,0,0,.4); position:relative; z-index:10; }
+
+/* ---- table ---- */
+.room{ flex:1; min-height:0; display:grid; grid-template-rows:auto minmax(0,1fr) auto; position:relative; }
+.opps{ display:flex; justify-content:center; gap:clamp(10px,4vw,60px); padding:10px; position:relative; z-index:5; }
+.opp{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 12px; border-radius:14px; background:rgba(0,0,0,.25); min-width:120px; border:2px solid transparent; transition:border-color .3s, background .3s; }
+.opp.turn{ border-color:var(--gold); background:rgba(242,182,50,.15); }
+.opp b{ font-size:15px; } .opp small{ font-weight:800; color:#d9cbe8; }
+.ofan{ display:flex; height:46px; align-items:flex-end; }
+.ofan .mini{ width:30px; height:44px; margin-left:-18px; border-radius:5px; background:radial-gradient(circle at 50% 50%, #3b2a55 0 40%, #1d1428 41%); border:2px solid #f8f2e6; box-shadow:0 2px 4px rgba(0,0,0,.4); }
+.ofan .mini:first-child{ margin-left:0; }
+.crashed{ font-family:Bungee, Impact, sans-serif; color:var(--gold); font-size:13px; }
+#stage{ position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; min-height:0; }
+#mid{ position:relative; width:min(640px, 92vw); height:min(330px, 44vh); border-radius:50%/42%; background:radial-gradient(ellipse at 50% 40%, #2e7a58, #154632 80%); box-shadow:inset 0 0 0 12px #5a3a1e, inset 0 0 0 16px #3e2814, 0 30px 50px rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; gap:clamp(18px,5vw,50px); }
+.ring{ position:absolute; inset:22px; border-radius:50%/42%; border:6px dashed var(--cc, #fff); opacity:.55; pointer-events:none; transition:border-color .4s; animation:spin 30s linear infinite; }
+.ring.rev{ animation-direction:reverse; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+.pilebox{ display:flex; flex-direction:column; align-items:center; gap:6px; position:relative; z-index:2; }
+.pilebox small{ font-weight:800; font-size:13px; color:#d9f0e2; }
+.dirflag{ position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:2; font-weight:900; font-size:13px; padding:3px 10px; border-radius:999px; background:rgba(0,0,0,.35); white-space:nowrap; }
+.colorflag{ position:absolute; bottom:14px; left:50%; transform:translateX(-50%); z-index:2; font-weight:900; font-size:14px; padding:4px 12px; border-radius:999px; background:var(--cc, #444); color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6); white-space:nowrap; }
+
+/* ---- cards ---- */
+.card{ --cw:84px; width:var(--cw); height:calc(var(--cw) * 1.45); border-radius:calc(var(--cw) * .12); position:relative; flex:none; border:0; padding:0; background:#fff; box-shadow:0 4px 0 rgba(0,0,0,.25), 0 8px 14px rgba(0,0,0,.35); color:#fff; font-family:Bungee, Impact, sans-serif; }
+.card .face{ position:absolute; inset:calc(var(--cw) * .06); border-radius:calc(var(--cw) * .08); background:var(--c); overflow:hidden; }
+.card .oval{ position:absolute; left:8%; right:8%; top:18%; bottom:18%; background:#fff; border-radius:50%; transform:rotate(-28deg); }
+.card .big{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:calc(var(--cw) * .52); color:var(--c); text-shadow:2px 2px 0 rgba(0,0,0,.25); line-height:1; }
+.card .big svg{ width:52%; height:auto; }
+.card .cn{ position:absolute; font-size:calc(var(--cw) * .2); line-height:1; text-shadow:1px 1px 0 rgba(0,0,0,.4); }
+.card .cn.tl{ left:7%; top:5%; } .card .cn.br{ right:7%; bottom:5%; transform:rotate(180deg); }
+.card.wild .face{ background:conic-gradient(var(--r) 0 90deg, var(--b) 90deg 180deg, var(--g) 180deg 270deg, var(--y) 270deg 360deg); }
+.card.wild .oval{ background:#16131a; }
+.card.wild .big{ color:#fff; font-size:calc(var(--cw) * .3); }
+.card.wild.picked .face{ background:var(--c); }
+.card.back .face{ background:radial-gradient(circle at 50% 50%, #3b2a55 0 40%, #1d1428 41%); }
+.card.back .oval{ background:#e2283b; }
+.card.back .big{ color:#fff; font-size:calc(var(--cw) * .17); text-align:center; line-height:1.05; transform:rotate(-28deg); text-shadow:2px 2px 0 #16131a; }
+button.card{ cursor:pointer; transition:transform .18s, box-shadow .18s, filter .2s; }
+button.card.play:hover, button.card.play:focus-visible{ transform:translateY(-18px); }
+button.card.play{ box-shadow:0 0 0 3px var(--gold), 0 8px 14px rgba(0,0,0,.35); }
+#hand .card{ position:relative; z-index:1; }
+#hand .card.play{ z-index:2; }
+#hand .card.play:hover, #hand .card.play:focus-visible{ z-index:3; }
+button.card.nope{ filter:brightness(.6) saturate(.6); cursor:default; }
+#drawPile{ cursor:pointer; }
+#drawPile.glow{ animation:glow .9s ease-in-out infinite alternate; }
+@keyframes glow{ from{ box-shadow:0 0 0 0 rgba(242,182,50,0); } to{ box-shadow:0 0 0 5px var(--gold), 0 0 22px 6px rgba(242,182,50,.7); } }
+.flyer{ position:fixed; z-index:60; pointer-events:none; transition:transform .45s cubic-bezier(.3,.7,.2,1); }
+
+/* ---- hand ---- */
+.handbar{ position:relative; z-index:5; padding:8px 12px 12px; background:rgba(0,0,0,.35); display:flex; flex-direction:column; gap:8px; }
+.handtop{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.msg{ font-weight:900; font-size:17px; margin-right:auto; min-height:24px; }
+.crashbtn{ font-family:Bungee, Impact, sans-serif; font-weight:400; font-size:22px; padding:8px 20px; border-radius:14px; border:3px solid #fff; background:var(--r); color:#fff; box-shadow:0 5px 0 #8c1020; }
+.crashbtn:active{ transform:translateY(3px); box-shadow:0 2px 0 #8c1020; }
+.crashbtn.ready{ animation:pulse .6s ease-in-out infinite alternate; }
+@keyframes pulse{ from{ transform:scale(1); } to{ transform:scale(1.08); } }
+#hand{ display:flex; justify-content:center; padding:20px 10px 4px; min-height:150px; overflow-x:auto; overflow-y:visible; }
+#hand .card{ --cw:clamp(62px, 8vw, 88px); margin-left:calc(var(--cw) * var(--ov, -.35)); }
+#hand .card:first-child{ margin-left:0; }
+
+/* ---- overlays ---- */
+.ov{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(10,6,16,.72); z-index:40; padding:16px; }
+.ov.on{ display:flex; }
+.panel{ background:#241833; border-radius:18px; padding:22px; width:min(520px,100%); max-height:92vh; overflow:auto; display:flex; flex-direction:column; gap:12px; align-items:center; text-align:center; box-shadow:0 30px 60px rgba(0,0,0,.5); }
+.panel h2{ font-family:Bungee, Impact, sans-serif; font-weight:400; margin:0; font-size:30px; }
+.row{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; align-items:center; }
+.swatches{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.swatch{ width:120px; height:80px; border-radius:14px; border:4px solid #fff; font-family:Bungee, Impact, sans-serif; font-size:18px; color:#fff; text-shadow:0 2px 2px rgba(0,0,0,.5); }
+.slot{ display:flex; gap:8px; width:100%; align-items:center; }
+.slot input{ flex:1; min-width:0; font:inherit; font-weight:800; padding:8px 10px; border-radius:10px; border:1px solid #4a3a5e; background:#140c1e; color:var(--cream); }
+.rules{ text-align:left; font-size:15px; line-height:1.5; } .rules h3{ margin:10px 0 2px; color:var(--gold); }
+.cover{ width:100%; border-radius:12px; }
+.scores{ width:100%; display:flex; flex-direction:column; gap:4px; }
+.scores div{ display:flex; justify-content:space-between; padding:6px 10px; border-radius:8px; background:rgba(255,255,255,.06); font-weight:800; }
+.toast{ position:fixed; left:50%; top:30%; transform:translate(-50%,-50%) scale(.6); z-index:50; font-family:Bungee, Impact, sans-serif; font-size:clamp(34px,7vw,72px); color:#fff; text-shadow:0 4px 0 var(--tc, #e2283b), 0 8px 20px rgba(0,0,0,.6); opacity:0; pointer-events:none; transition:transform .3s cubic-bezier(.3,1.6,.5,1), opacity .25s; white-space:nowrap; }
+.toast.on{ opacity:1; transform:translate(-50%,-50%) scale(1); }
+@media (max-width:700px){ .opp{ min-width:90px; padding:4px 8px; } #mid{ height:min(260px, 38vh); } .card{ --cw:66px; } }
+@media (prefers-reduced-motion: reduce){ .ring{ animation:none; } .flyer{ transition:none; } .crashbtn.ready, #drawPile.glow{ animation:none; } }
+</style>
+</head>
+<body>
+<div class="top"><h1><span>Color</span> <span>Crash</span></h1><button class="btn" id="sndBtn" aria-pressed="true">Sound on</button><button class="btn" id="rulesBtn">Rules</button><button class="btn primary" id="newg">New game</button></div>
+<div class="room">
+  <div class="opps" id="opps"></div>
+  <div id="stage">
+    <div id="mid">
+      <div class="ring" id="ring"></div>
+      <div class="dirflag" id="dirflag"></div>
+      <div class="pilebox"><button class="card back" id="drawPile" aria-label="Draw a card"><span class="face"><span class="oval"></span><span class="big">COLOR<br>CRASH</span></span></button><small id="deckCount"></small></div>
+      <div class="pilebox"><div id="discard"></div><small>Discard</small></div>
+      <div class="colorflag" id="colorflag"></div>
+    </div>
+  </div>
+  <div class="handbar">
+    <div class="handtop"><p class="msg" id="msg" aria-live="polite"></p><button class="btn" id="passBtn" hidden>Keep it and pass</button><button class="crashbtn" id="crashBtn" aria-label="Call CRASH when you have one card left">CRASH!</button></div>
+    <div id="hand" aria-label="Your hand"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<div class="ov on" id="setupOv" role="dialog" aria-modal="true" aria-labelledby="setupT"><div class="panel">
+  <img class="cover" id="setupCover" alt="Color Crash box art" hidden>
+  <h2 id="setupT">Color Crash</h2>
+  <p>Match the color or the number, play your power cards, and be the first to empty your hand. Down to one card? Hit <b>CRASH!</b> before someone catches you.</p>
+  <div class="slot"><input id="myName" value="You" aria-label="Your name" maxlength="16"></div>
+  <div class="row" id="oppRow"></div>
+  <div class="row" id="lenRow"></div>
+  <div class="row" id="lvlRow"></div>
+  <div class="row"><button class="btn primary" id="goBtn">Deal ’em</button><button class="btn" id="setupRules">How to play</button></div>
+</div></div>
+<div class="ov" id="colorOv" role="dialog" aria-modal="true" aria-labelledby="colorT"><div class="panel"><h2 id="colorT">Pick a color</h2><div class="swatches" id="swatches"></div></div></div>
+<div class="ov" id="rulesOv" role="dialog" aria-modal="true" aria-labelledby="rulesT"><div class="panel"><h2 id="rulesT">How to play</h2><div class="rules">
+<h3>Goal</h3><p>Be the first to play every card in your hand.</p>
+<h3>Your turn</h3><p>Play one card that matches the top card’s <b>color</b> or its <b>number or symbol</b>. A Wild can go on anything. Glowing cards are the ones you can play. Can’t play? Tap the draw pile. If the card you draw fits, you can play it right away, or keep it and pass.</p>
+<h3>Power cards</h3><p><b>⦸ Skip:</b> the next player loses their turn.<br><b>⇄ Reverse:</b> play switches direction. With two players it works like a Skip.<br><b>+2:</b> the next player draws 2 and loses their turn.<br><b>Wild:</b> you choose the new color.<br><b>Wild +4:</b> you choose the color, and the next player draws 4 and loses their turn.</p>
+<h3>CRASH!</h3><p>When you play your second-to-last card, hit <b>CRASH!</b> before the next player goes. If someone catches you first, you draw 2.</p>
+<h3>Scoring</h3><p>The round winner scores the cards left in everyone else’s hand: numbers count their number, Skip, Reverse and +2 are 20, and Wilds are 50. Play one round, or race to 250 points.</p>
+</div><button class="btn primary" id="rulesClose">Got it</button></div></div>
+<div class="ov" id="endOv" role="dialog" aria-modal="true" aria-labelledby="endT"><div class="panel"><h2 id="endT"></h2><p id="endP"></p><div class="scores" id="endScores"></div><div class="row"><button class="btn primary" id="nextBtn">Next round</button><button class="btn" id="againBtn">New game</button></div></div></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const rnd = n => Math.floor(Math.random() * n);
+const COLORS = { r:'Red', b:'Blue', g:'Green', y:'Yellow' }, CV = { r:'var(--r)', b:'var(--b)', g:'var(--g)', y:'var(--y)' }, HEX = { r:'#e2283b', b:'#2563d9', g:'#1f9d55', y:'#f2b632' };
+const ICON = {
+  skip:'<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="14" fill="none" stroke="currentColor" stroke-width="6"/><line x1="10" y1="30" x2="30" y2="10" stroke="currentColor" stroke-width="6"/></svg>',
+  rev:'<svg viewBox="0 0 40 40"><path d="M8 16h20l-6-6M32 24H12l6 6" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+const LABEL = { skip:'⦸', rev:'⇄', d2:'+2', wild:'W', w4:'+4' };
+const NAMEV = { skip:'Skip', rev:'Reverse', d2:'+2', wild:'Wild', w4:'Wild +4' };
+let cfg = { opps:3, len:'race', lvl:'normal' }; try { Object.assign(cfg, JSON.parse(localStorage.getItem('crash-cfg') || '{}')); } catch (e) {}
+let G = null, run = 0, sound = true;
+try { sound = localStorage.getItem('crash-snd') !== 'off'; } catch (e) {}
+let AC; function tone(f, d = .08, type = 'triangle', v = .07) { if (!sound) return; try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(v, AC.currentTime); g.gain.exponentialRampToValueAtTime(.001, AC.currentTime + d); o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime + d + .02); } catch (e) {} }
+const snap = () => { tone(900, .05, 'square', .05); setTimeout(() => tone(500, .06, 'triangle'), 40); };
+
+/* ---------- deck ---------- */
+function makeDeck() {
+  const d = []; let id = 0;
+  for (const c of 'rbgy') {
+    d.push({ id:id++, c, v:0 });
+    for (let n = 1; n <= 9; n++) for (let k = 0; k < 2; k++) d.push({ id:id++, c, v:n });
+    for (const v of ['skip', 'rev', 'd2']) for (let k = 0; k < 2; k++) d.push({ id:id++, c, v });
+  }
+  for (let k = 0; k < 4; k++) { d.push({ id:id++, c:'w', v:'wild' }); d.push({ id:id++, c:'w', v:'w4' }); }
+  return shuffle(d);
+}
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const isWild = c => c.c === 'w';
+const pts = c => typeof c.v === 'number' ? c.v : isWild(c) ? 50 : 20;
+const topCard = () => G.pile[G.pile.length - 1];
+const canPlay = c => isWild(c) || c.c === G.color || c.v === topCard().v;
+function cardHTML(c, opts = {}) {
+  const wild = isWild(c), color = wild ? (opts.picked ? CV[opts.picked] : '') : CV[c.c];
+  const big = typeof c.v === 'number' ? c.v : c.v === 'skip' ? ICON.skip : c.v === 'rev' ? ICON.rev : c.v === 'd2' ? '+2' : c.v === 'w4' ? '+4' : 'WILD';
+  const corner = typeof c.v === 'number' ? c.v : LABEL[c.v];
+  return `<span class="face"><span class="oval"></span><span class="big">${big}</span><span class="cn tl">${corner}</span><span class="cn br">${corner}</span></span>`;
+}
+function cardEl(c, tag = 'div', picked) {
+  const e = document.createElement(tag); e.className = 'card' + (isWild(c) ? ' wild' : '') + (picked ? ' picked' : '');
+  e.style.setProperty('--c', isWild(c) ? (picked ? CV[picked] : '#16131a') : CV[c.c]);
+  e.innerHTML = cardHTML(c, { picked }); e.setAttribute('aria-label', cardName(c)); return e;
+}
+const cardName = c => isWild(c) ? NAMEV[c.v] : `${COLORS[c.c]} ${typeof c.v === 'number' ? c.v : NAMEV[c.v]}`;
+
+/* ---------- setup ---------- */
+const BOTNAMES = ['Ziggy', 'Pepper', 'Mo', 'Juniper', 'Rocco', 'Tilly'];
+function seg(id, items, key) { $(id).innerHTML = items.map(([v, l]) => `<button class="btn" data-v="${v}" aria-pressed="${cfg[key] == v}">${l}</button>`).join(''); $(id).querySelectorAll('button').forEach(b => b.onclick = () => { cfg[key] = isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v; openSetup(); }); }
+function openSetup() {
+  run++;
+  seg('#oppRow', [[1, '1 computer'], [2, '2 computers'], [3, '3 computers']], 'opps');
+  seg('#lenRow', [['one', 'One round'], ['race', 'First to 250']], 'len');
+  seg('#lvlRow', [['easy', 'Easy computers'], ['normal', 'Sneaky computers']], 'lvl');
+  $('#setupOv').classList.add('on'); $('#goBtn').focus();
+}
+$('#goBtn').onclick = () => { try { localStorage.setItem('crash-cfg', JSON.stringify(cfg)); } catch (e) {} $('#setupOv').classList.remove('on'); newGame(); };
+$('#newg').onclick = openSetup;
+$('#againBtn').onclick = () => { $('#endOv').classList.remove('on'); openSetup(); };
+$('#nextBtn').onclick = () => { $('#endOv').classList.remove('on'); deal(); };
+$('#rulesBtn').onclick = $('#setupRules').onclick = () => $('#rulesOv').classList.add('on');
+$('#rulesClose').onclick = () => $('#rulesOv').classList.remove('on');
+$('#sndBtn').onclick = () => { sound = !sound; try { localStorage.setItem('crash-snd', sound ? 'on' : 'off'); } catch (e) {} $('#sndBtn').setAttribute('aria-pressed', sound); $('#sndBtn').textContent = sound ? 'Sound on' : 'Sound off'; };
+$('#sndBtn').setAttribute('aria-pressed', sound); $('#sndBtn').textContent = sound ? 'Sound on' : 'Sound off';
+
+function newGame() {
+  const names = shuffle([...BOTNAMES]);
+  G = { players:[{ name:($('#myName').value.trim() || 'You'), bot:false, hand:[], score:0 }].concat([...Array(cfg.opps)].map((_, i) => ({ name:names[i], bot:true, hand:[], score:0 }))), dealer:rnd(cfg.opps + 1) };
+  deal();
+}
+async function deal() {
+  run++; const rid = run;
+  G.deck = makeDeck(); G.pile = []; G.dir = 1; G.over = false; G.crashed = new Set(); G.drawnCard = null; G.busy = false;
+  G.players.forEach(p => p.hand = []);
+  for (let k = 0; k < 7; k++) G.players.forEach(p => p.hand.push(G.deck.pop()));
+  let first; while (true) { first = G.deck.pop(); if (first.v !== 'w4') break; G.deck.unshift(first); }
+  G.pile.push(first); G.color = isWild(first) ? 'rbgy'[rnd(4)] : first.c; G.pickedColor = isWild(first) ? G.color : null;
+  G.turn = (G.dealer + 1) % G.players.length; G.dealer = G.turn;
+  render(); say(`New round! The first card is ${cardName(first)}${isWild(first) ? `, so the color is ${COLORS[G.color]}` : ''}.`); tone(660, .1);
+  // first card's power applies to the first player
+  if (first.v === 'skip') { toast('Skip!', HEX[G.color]); G.turn = next(1); }
+  else if (first.v === 'rev') { G.dir = -1; G.turn = G.players.length === 2 ? next(1) : (G.dealer - 1 + G.players.length) % G.players.length; }
+  else if (first.v === 'd2') { await drawCards(G.turn, 2); G.turn = next(1); }
+  await sleep(700); if (rid !== run) return; loop(rid);
+}
+const next = (n = 1) => (G.turn + G.dir * n + G.players.length * 4) % G.players.length;
+const cur = () => G.players[G.turn];
+function say(t) { $('#msg').textContent = t; }
+function toast(t, col) { const e = $('#toast'); e.textContent = t; e.style.setProperty('--tc', col || '#e2283b'); e.classList.add('on'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('on'), 900); }
+
+/* ---------- drawing ---------- */
+function drawOne() {
+  if (!G.deck.length) { const t = G.pile.pop(); G.deck = shuffle(G.pile.map(c => c)); G.pile = [t]; if (!G.deck.length) return null; toast('Shuffle!', '#6b4aa0'); }
+  return G.deck.pop();
+}
+async function drawCards(pi, n) {
+  for (let k = 0; k < n; k++) { const c = drawOne(); if (!c) break; G.players[pi].hand.push(c); G.crashed.delete(pi); tone(420 + k * 40, .05); await fly($('#drawPile'), pi === 0 ? $('#hand') : $(`#opp${pi}`), null); render(); }
+}
+
+/* ---------- animation ---------- */
+async function fly(fromEl, toEl, card, picked) {
+  if (!fromEl || !toEl || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect();
+  const e = card ? cardEl(card, 'div', picked) : (() => { const x = document.createElement('div'); x.className = 'card back'; x.innerHTML = $('#drawPile').innerHTML; return x; })();
+  e.classList.add('flyer'); e.style.setProperty('--cw', '70px'); e.style.left = (a.left + a.width / 2 - 35) + 'px'; e.style.top = (a.top + a.height / 2 - 50) + 'px';
+  document.body.appendChild(e); void e.offsetWidth;
+  e.style.transform = `translate(${b.left + b.width / 2 - a.left - a.width / 2}px, ${b.top + b.height / 2 - a.top - a.height / 2}px) rotate(${rnd(30) - 15}deg)`;
+  await sleep(460); e.remove();
+}
+
+/* ---------- playing ---------- */
+async function play(pi, card, chosen) {
+  const p = G.players[pi], from = pi === 0 ? $(`#hand [data-id="${card.id}"]`) || $('#hand') : $(`#opp${pi}`);
+  p.hand = p.hand.filter(c => c.id !== card.id);
+  if (isWild(card)) { G.color = chosen; G.pickedColor = chosen; } else { G.color = card.c; G.pickedColor = null; }
+  await fly(from, $('#discard'), card, isWild(card) ? chosen : null);
+  G.pile.push(card); snap(); G.drawnCard = null;
+  if (p.hand.length !== 1) G.crashed.delete(pi);
+  render();
+  const col = HEX[G.color];
+  say(`${pi === 0 ? 'You play' : p.name + ' plays'} ${cardName(card)}${isWild(card) ? ` and picks ${COLORS[chosen]}` : ''}.`);
+  if (window.__cam) window.__cam.focusEl($('#discard'), 1.5, 900);
+  if (p.hand.length === 0) return endRound(pi);
+  // CRASH check: the player must call before the next player acts
+  if (p.hand.length === 1 && !G.crashed.has(pi)) {
+    if (p.bot) { const chance = cfg.lvl === 'easy' ? .65 : .9; if (Math.random() < chance) { G.crashed.add(pi); await sleep(250); toast('CRASH!', '#e2283b'); tone(300, .2, 'sawtooth'); render(); } }
+  }
+  let skip = 1;
+  if (card.v === 'skip') { toast('Skip!', col); skip = 2; }
+  else if (card.v === 'rev') { G.dir *= -1; toast('Reverse!', col); if (G.players.length === 2) skip = 2; }
+  else if (card.v === 'd2') { toast('+2!', col); await sleep(300); await drawCards(next(1), 2); skip = 2; }
+  else if (card.v === 'w4') { toast('+4!', col); await sleep(300); await drawCards(next(1), 4); skip = 2; }
+  await catchCheck(pi);
+  G.turn = next(skip);
+}
+// someone catches a player who has 1 card and didn't hit CRASH
+async function catchCheck(pi) {
+  const p = G.players[pi];
+  if (p.hand.length !== 1 || G.crashed.has(pi)) return;
+  if (pi === 0) { await sleep(cfg.lvl === 'easy' ? 1600 : 1000); if (G.crashed.has(0) || p.hand.length !== 1) return; }
+  else { if (Math.random() > (cfg.lvl === 'easy' ? .5 : .85)) return; await sleep(500); if (G.crashed.has(pi)) return; }
+  const others = G.players.map((q, i) => i).filter(i => i !== pi && i !== 0 && G.players[i].bot);
+  if (pi !== 0 && !others.length) return;
+  const catcher = G.players[others[rnd(others.length)]].name;
+  toast('Caught!', '#6b4aa0'); say(`${catcher} caught ${pi === 0 ? 'you' : p.name} without a CRASH! ${pi === 0 ? 'You draw' : p.name + ' draws'} 2.`); tone(200, .3, 'sawtooth');
+  await drawCards(pi, 2); await sleep(500);
+}
+$('#crashBtn').onclick = () => {
+  if (!G || G.over) return;
+  const me = G.players[0];
+  // call it with 1 card left, or with 2 cards on your turn right before you play
+  if (me.hand.length === 1 || (me.hand.length === 2 && G.turn === 0)) { G.crashed.add(0); toast('CRASH!', '#e2283b'); tone(300, .25, 'sawtooth'); render(); return; }
+  // catch a computer player who forgot
+  const forgot = G.players.findIndex((p, i) => i > 0 && p.hand.length === 1 && !G.crashed.has(i));
+  if (forgot > 0) { G.crashed.add(forgot); const p = G.players[forgot]; toast('Caught!', '#6b4aa0'); say(`You caught ${p.name}! ${p.name} draws 2.`); drawCards(forgot, 2); return; }
+  say('You can only hit CRASH when you have one card left, or to catch someone who forgot.');
+};
+
+/* ---------- turn loop ---------- */
+async function loop(rid) {
+  while (rid === run && G && !G.over) {
+    render();
+    const p = cur();
+    if (!p.bot) { await humanTurn(rid); }
+    else { say(`${p.name} is thinking…`); await sleep(900 + rnd(500)); if (rid !== run) return; await botTurn(G.turn); }
+    if (rid !== run || G.over) return;
+    await sleep(350);
+  }
+}
+let resolveHuman = null;
+function humanTurn(rid) {
+  return new Promise(res => {
+    G.drawnCard = null; G.mustPass = false;
+    resolveHuman = () => { resolveHuman = null; res(); };
+    const any = G.players[0].hand.some(canPlay);
+    say(any ? `Your turn. Play a glowing card${G.players[0].hand.length === 2 ? ' (and hit CRASH!)' : ''}.` : 'Your turn. Nothing fits, so tap the draw pile.');
+    render();
+  });
+}
+async function humanPlay(card) {
+  if (!resolveHuman || G.busy || !canPlay(card)) return;
+  if (G.drawnCard && card.id !== G.drawnCard.id) return;
+  G.busy = true;
+  let chosen = null;
+  if (isWild(card)) { chosen = await pickColor(); }
+  await play(0, card, chosen); G.busy = false;
+  if (resolveHuman) resolveHuman();
+}
+$('#drawPile').onclick = async () => {
+  if (!resolveHuman || G.busy || G.drawnCard || G.turn !== 0) return;
+  G.busy = true;
+  const c = drawOne(); if (!c) { G.busy = false; return; }
+  G.players[0].hand.push(c); G.crashed.delete(0); tone(420, .06);
+  await fly($('#drawPile'), $('#hand'), c); G.busy = false;
+  if (canPlay(c)) { G.drawnCard = c; say(`You drew ${cardName(c)}. Play it, or keep it and pass.`); render(); }
+  else { say(`You drew ${cardName(c)}. It doesn’t fit, so your turn passes.`); render(); await sleep(900); G.turn = next(1); if (resolveHuman) resolveHuman(); }
+};
+$('#passBtn').onclick = () => { if (!G.drawnCard || !resolveHuman) return; G.drawnCard = null; G.turn = next(1); say('You keep the card and pass.'); if (resolveHuman) resolveHuman(); };
+function pickColor() {
+  return new Promise(res => {
+    $('#swatches').innerHTML = Object.entries(COLORS).map(([k, n]) => `<button class="swatch" data-c="${k}" style="background:${HEX[k]}">${n}</button>`).join('');
+    $('#colorOv').classList.add('on'); $('#swatches').querySelector('button').focus();
+    $('#swatches').querySelectorAll('button').forEach(b => b.onclick = () => { $('#colorOv').classList.remove('on'); res(b.dataset.c); });
+  });
+}
+/* ---------- computer players ---------- */
+function bestColor(hand) { const n = { r:0, b:0, g:0, y:0 }; hand.forEach(c => { if (!isWild(c)) n[c.c] += 1 + (typeof c.v === 'number' ? 0 : .5); }); const best = Object.entries(n).sort((a, b) => b[1] - a[1])[0]; return best[1] > 0 ? best[0] : 'rbgy'[rnd(4)]; }
+function botPick(pi) {
+  const p = G.players[pi], opts = p.hand.filter(canPlay); if (!opts.length) return null;
+  if (cfg.lvl === 'easy') return opts[rnd(opts.length)];
+  const nxt = G.players[next(1)], danger = nxt.hand.length <= 2;
+  const score = c => {
+    let s = 0;
+    if (isWild(c)) s -= 30; // save wilds
+    if (danger && ['skip', 'd2', 'w4'].includes(c.v)) s += 60;
+    if (danger && c.v === 'w4') s += 20;
+    if (!isWild(c) && c.c === G.color) s += 6;
+    if (typeof c.v === 'number') s += c.v;          // dump high numbers
+    else s += 12;
+    if (!isWild(c)) s += p.hand.filter(x => x.c === c.c).length * 2; // stay in a color you hold lots of
+    return s + Math.random() * 3;
+  };
+  return opts.sort((a, b) => score(b) - score(a))[0];
+}
+async function botTurn(pi) {
+  const p = G.players[pi];
+  let c = botPick(pi);
+  if (!c) {
+    const d = drawOne(); if (d) { p.hand.push(d); G.crashed.delete(pi); tone(420, .05); await fly($('#drawPile'), $(`#opp${pi}`), null); render(); }
+    say(`${p.name} draws a card.`); await sleep(600);
+    if (d && canPlay(d)) c = d; else { G.turn = next(1); return; }
+  }
+  const chosen = isWild(c) ? bestColor(p.hand.filter(x => x.id !== c.id)) : null;
+  await play(pi, c, chosen);
+}
+
+/* ---------- end of round ---------- */
+function endRound(wi) {
+  G.over = true; const w = G.players[wi];
+  const gained = G.players.reduce((s, p, i) => i === wi ? s : s + p.hand.reduce((t, c) => t + pts(c), 0), 0);
+  w.score += gained; tone(523, .15); setTimeout(() => tone(659, .15), 130); setTimeout(() => tone(784, .3), 260);
+  const gameOver = cfg.len === 'one' || w.score >= 250;
+  const you = wi === 0;
+  $('#endT').textContent = gameOver ? (you ? 'You win the game!' : `${w.name} wins the game!`) : (you ? 'You won the round!' : `${w.name} won the round`);
+  $('#endP').textContent = `${you ? 'You' : w.name} played every card and scored ${gained} points from the cards left in everyone’s hands.${!gameOver ? ' First to 250 wins.' : ''}`;
+  $('#endScores').innerHTML = [...G.players].sort((a, b) => b.score - a.score).map(p => `<div><span>${p.name}</span><span>${p.score} pts${p.hand.length ? ` · ${p.hand.length} left` : ''}</span></div>`).join('');
+  $('#nextBtn').hidden = gameOver; render(); toast(you ? 'You win!' : `${w.name} wins!`, '#1f9d55');
+  setTimeout(() => $('#endOv').classList.add('on'), 1100);
+}
+
+/* ---------- render ---------- */
+function render() {
+  if (!G) return;
+  $('#opps').innerHTML = G.players.slice(1).map((p, k) => { const i = k + 1, n = p.hand.length;
+    return `<div class="opp${G.turn === i && !G.over ? ' turn' : ''}" id="opp${i}"><b>${p.name}</b><div class="ofan" aria-hidden="true">${'<span class="mini"></span>'.repeat(Math.min(n, 12))}</div><small>${n} card${n === 1 ? '' : 's'} · ${p.score} pts</small>${n === 1 && G.crashed.has(i) ? '<span class="crashed">CRASH!</span>' : ''}</div>`; }).join('');
+  const t = topCard(), d = $('#discard'); d.innerHTML = ''; if (t) d.appendChild(cardEl(t, 'div', isWild(t) ? G.color : null));
+  $('#deckCount').textContent = `${G.deck.length} left`;
+  $('#mid').style.setProperty('--cc', HEX[G.color]); $('#colorflag').textContent = `Color: ${COLORS[G.color]}`;
+  $('#ring').classList.toggle('rev', G.dir < 0);
+  $('#dirflag').textContent = G.dir > 0 ? 'Play goes ↻' : 'Play goes ↺';
+  const me = G.players[0], myTurn = G.turn === 0 && !!resolveHuman && !G.over;
+  const h = $('#hand'); h.innerHTML = '';
+  const order = [...me.hand].sort((a, b) => ('rbgyw'.indexOf(a.c) - 'rbgyw'.indexOf(b.c)) || (pts(a) - pts(b)) || String(a.v).localeCompare(String(b.v)));
+  h.style.setProperty('--ov', me.hand.length > 12 ? -.62 : me.hand.length > 8 ? -.5 : -.3);
+  order.forEach(c => { const ok = myTurn && canPlay(c) && (!G.drawnCard || c.id === G.drawnCard.id); const b = cardEl(c, 'button'); b.dataset.id = c.id; b.classList.add(ok ? 'play' : myTurn ? 'nope' : 'idle'); b.onclick = () => humanPlay(c); if (!ok) b.setAttribute('aria-disabled', 'true'); h.appendChild(b); });
+  $('#drawPile').classList.toggle('glow', myTurn && !G.drawnCard && !me.hand.some(canPlay));
+  $('#passBtn').hidden = !(myTurn && G.drawnCard);
+  const needCrash = !G.crashed.has(0) && (me.hand.length === 1 || (me.hand.length === 2 && myTurn && me.hand.some(canPlay)));
+  $('#crashBtn').classList.toggle('ready', needCrash);
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('#rulesOv').classList.remove('on'); } if ((e.key === 'c' || e.key === 'C') && !$('.ov.on')) $('#crashBtn').click(); });
+openSetup();
+</script>
+<script>window.__V3 = { key:'crash', top:'.top', before:'#newg', stage:'#stage', target:'#mid', tilt:44, spin:true, followable:true, focusZoom:1.5, preserve:['.pilebox'], extraCss:'.is3d #mid .pilebox{ transform:translateZ(2px); } .is3d #mid .card{ box-shadow:0 2px 0 #ddd, 0 4px 0 #ccc, 0 6px 0 #bbb, 0 14px 18px rgba(0,0,0,.45); } #stage{ overflow:hidden; }' };</script>
+<script>
+/* 3D view, follow camera and zoom add-on. Config: window.__V3 */
+(function () {
+  const C = window.__V3, root = document.documentElement;
+  const st = { on:false, tilt:C.tilt || 50, spin:0, zoom:1, follow:true };
+  try { Object.assign(st, JSON.parse(localStorage.getItem('v3-' + C.key) || '{}')); } catch (e) {}
+  st.zoom = Math.max(1, Math.min(3, st.zoom || 1));
+  const cam = { z:1, x:null, y:null, px:0, py:0 };
+  const TF = C.transform || 'translate(var(--px, 0px), var(--py, 0px)) scale(var(--zoom, 1)) rotateX(var(--tilt, 0deg)) rotateZ(var(--spin, 0deg)) translate(var(--cx, 0px), var(--cy, 0px))';
+  const css = document.createElement('style');
+  css.textContent = `
+${C.stage}{ perspective:${C.persp || 1700}px; perspective-origin:50% ${C.originY || '35%'}; }
+${C.target}{ transform-style:preserve-3d; transition:transform .75s cubic-bezier(.3,.7,.2,1); transform:${TF}; }
+${C.target}.v3-follow{ transition:transform .5s ease-out; }
+${(C.preserve || []).length ? C.preserve.join(',') + '{ transform-style:preserve-3d; }' : ''}
+${C.billboard ? `${C.billboard}{ transform:rotateZ(calc(var(--spin, 0deg) * -1)) rotateX(calc(var(--tilt, 0deg) * -1)); transform-origin:${C.bbOrigin || '50% 90%'}; }` : ''}
+.v3-drag ${C.target}, .v3-drag ${C.billboard || '.__none'}{ transition:none !important; }
+${C.extraCss || ''}
+@media (prefers-reduced-motion: reduce){ ${C.target}{ transition:none !important; } }`;
+  document.head.appendChild(css);
+  const bar = document.querySelector(C.top), where = C.before ? bar.querySelector(C.before) : null;
+  const mk = (label, aria) => { const b = document.createElement('button'); b.className = C.btnClass || 'btn'; b.textContent = label; if (aria) b.setAttribute('aria-label', aria); (where ? bar.insertBefore(b, where) : bar.appendChild(b)); return b; };
+  const tgl = mk('3D view'), rl = mk('⟲', 'Rotate left'), rr = mk('⟳', 'Rotate right');
+  const zo = mk('−', 'Zoom out'), zi = mk('+', 'Zoom in');
+  const fol = C.followable ? mk('Follow camera') : null;
+  const tgt = () => document.querySelector(C.target);
+  function setVars() {
+    const el = tgt(); if (!el) return;
+    const z = Math.max(st.zoom, cam.z);
+    root.style.setProperty('--tilt', st.on ? st.tilt + 'deg' : '0deg');
+    root.style.setProperty('--spin', st.on && C.spin ? st.spin + 'deg' : '0deg');
+    root.style.setProperty('--zoom', z);
+    const w = el.offsetWidth, h = el.offsetHeight;
+    const fx = cam.x == null ? w / 2 : cam.x, fy = cam.y == null ? h / 2 : cam.y;
+    root.style.setProperty('--cx', (w / 2 - fx) + 'px'); root.style.setProperty('--cy', (h / 2 - fy) + 'px');
+    root.style.setProperty('--px', cam.px + 'px'); root.style.setProperty('--py', cam.py + 'px');
+  }
+  function apply() {
+    root.classList.toggle('is3d', st.on);
+    tgl.textContent = st.on ? '2D view' : '3D view'; tgl.setAttribute('aria-pressed', st.on);
+    rl.hidden = rr.hidden = !(st.on && C.spin);
+    if (fol) { fol.setAttribute('aria-pressed', st.follow); fol.textContent = st.follow ? 'Follow camera: on' : 'Follow camera: off'; }
+    zo.disabled = st.zoom <= 1; zi.disabled = st.zoom >= 3;
+    try { localStorage.setItem('v3-' + C.key, JSON.stringify(st)); } catch (e) {}
+    setVars(); if (C.onChange) C.onChange(st);
+  }
+  tgl.onclick = () => { st.on = !st.on; apply(); };
+  rl.onclick = () => { st.spin -= 45; apply(); };
+  rr.onclick = () => { st.spin += 45; apply(); };
+  zi.onclick = () => { st.zoom = Math.min(3, +(st.zoom + .25).toFixed(2)); apply(); };
+  zo.onclick = () => { st.zoom = Math.max(1, +(st.zoom - .25).toFixed(2)); if (st.zoom === 1) { cam.px = cam.py = 0; } apply(); };
+  if (fol) fol.onclick = () => { st.follow = !st.follow; if (!st.follow) api.wide(); apply(); };
+  function localPos(el) {
+    const T = tgt(); let x = el.offsetWidth / 2, y = el.offsetHeight / 2, n = el;
+    while (n && n !== T) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; if (n && !T.contains(n) && n !== T) break; }
+    return [x, y];
+  }
+  let backT = null;
+  const api = window.__cam = {
+    focus(x, y, z, follow) { if (!st.follow || !C.followable) return; clearTimeout(backT); cam.x = x; cam.y = y; cam.z = z || C.focusZoom || 1.8; tgt().classList.toggle('v3-follow', !!follow); setVars(); },
+    focusEl(el, z, back) { if (!el || !st.follow || !C.followable) return; const [x, y] = localPos(el); api.focus(x, y, z); if (back) { clearTimeout(backT); backT = setTimeout(api.wide, back); } },
+    wide() { clearTimeout(backT); cam.x = cam.y = null; cam.z = 1; const el = tgt(); if (el) el.classList.remove('v3-follow'); setVars(); },
+    state:st, cam,
+    pan(px, py) { cam.px = px; cam.py = py; setVars(); },
+    zoomBy(dz) { st.zoom = Math.max(1, Math.min(3, +(st.zoom + dz).toFixed(2))); if (st.zoom === 1) cam.px = cam.py = 0; apply(); }
+  };
+  if (C.drag) {
+    const stage = document.querySelector(C.stage); let d = null;
+    stage.addEventListener('pointerdown', e => { if (!st.on || e.target.closest('button, input, .no-orbit')) return; d = { x:e.clientX, y:e.clientY, spin:st.spin, tilt:st.tilt }; stage.setPointerCapture(e.pointerId); root.classList.add('v3-drag'); });
+    stage.addEventListener('pointermove', e => { if (!d) return; if (C.spin) st.spin = d.spin + (e.clientX - d.x) * .35; st.tilt = Math.max(20, Math.min(68, d.tilt - (e.clientY - d.y) * .2)); apply(); });
+    const end = () => { if (d) { d = null; root.classList.remove('v3-drag'); apply(); } };
+    stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+  }
+  window.__v3 = st;
+  new ResizeObserver(setVars).observe(document.body);
+  apply();
+})();
+
+</script>
+</body>
+</html>
