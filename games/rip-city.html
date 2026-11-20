@@ -34,13 +34,24 @@ button{ font:inherit; cursor:pointer; }
 #ripStage{ position:relative; flex:1; width:100%; display:flex; align-items:center; justify-content:center; overflow:hidden; }
 #table{ position:relative; width:min(1100px, 96vw); min-height:min(520px, 68vh); display:flex; align-items:center; justify-content:center; border-radius:30px; background:radial-gradient(ellipse at 50% 40%, rgba(255,255,255,.07), rgba(0,0,0,.25)); }
 .pack{ --w:min(240px, 52vw); position:relative; width:var(--w); height:calc(var(--w) * 1.5); border:0; padding:0; background:none; transition:transform .25s; animation:bob 2.4s ease-in-out infinite; }
-.pack:hover{ transform:translateY(-6px) rotate(-1.5deg); }
+.pack{ transform-style:preserve-3d; transform:rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition:transform .18s ease-out; }
+.pack:hover{ transform:rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateZ(14px); }
+.packbox{ position:relative; perspective:1100px; transform-style:flat; z-index:1; margin-bottom:46px; }
 @keyframes bob{ 0%,100%{ translate:0 0; } 50%{ translate:0 -8px; } }
-.pack .half{ position:absolute; inset:0; z-index:2; }
-.pack .half.t{ z-index:3; transform-origin:0% 22%; }
+.pack .half{ position:absolute; inset:0; transform:translateZ(9px); }
+.pack .grp{ position:absolute; inset:0; transform-style:preserve-3d; }
+.pack .slab{ position:absolute; inset:0; border-radius:14px; background:linear-gradient(160deg, #c0185a, #6e0f58 55%, #22104f); box-shadow:inset 0 0 0 2px rgba(255,255,255,.18); }
+.pack .slab.back{ background:linear-gradient(200deg, #2a0f6a, #8a1060 60%, var(--red)); box-shadow:inset 0 0 0 4px rgba(255,255,255,.25), 0 20px 40px rgba(0,0,0,.5); }
+.pack .wrap::after{ content:""; position:absolute; inset:0; border-radius:14px; pointer-events:none; background:
+  radial-gradient(ellipse 70% 52% at var(--sx, 50%) var(--sy, 46%), rgba(255,255,255,.3), transparent 70%),
+  linear-gradient(90deg, rgba(0,0,0,.42), transparent 13%, transparent 87%, rgba(0,0,0,.42)),
+  linear-gradient(180deg, rgba(0,0,0,.25), transparent 9%, transparent 91%, rgba(0,0,0,.3)),
+  repeating-linear-gradient(90deg, transparent 0 18px, rgba(255,255,255,.05) 18px 20px, transparent 20px 34px); }
+.pshadow{ position:absolute; left:50%; top:46%; width:220px; height:40px; margin-left:-110px; border-radius:50%; background:radial-gradient(closest-side, rgba(0,0,0,.55), transparent); pointer-events:none; transition:opacity .3s; }
+.pack #packTop{ transform-origin:0% 22%; }
 .pack .stack{ position:absolute; left:12%; width:76%; top:16%; aspect-ratio:5/7; z-index:1; opacity:0; }
 .pack .stack i{ position:absolute; inset:0; border-radius:8px; background:#1c0f38 var(--back) center/100% 100%; box-shadow:0 2px 3px rgba(0,0,0,.5); }
-.pack .lower{ position:absolute; inset:0; z-index:2; }
+.pack .lower{ position:absolute; inset:0; transform-style:preserve-3d; }
 .shred{ position:absolute; z-index:5; width:10px; height:6px; background:linear-gradient(135deg,#fff,#c9b6ff 40%,#ff7ab6); border-radius:1px; pointer-events:none; }
 .pack .wrap{ position:absolute; left:0; width:100%; height:calc(var(--w) * 1.5); border-radius:14px; background:
   linear-gradient(115deg, transparent 30%, rgba(255,255,255,.55) 45%, transparent 60%) no-repeat,
@@ -51,7 +62,7 @@ button{ font:inherit; cursor:pointer; }
 .pack .crimp{ position:absolute; left:0; right:0; height:14px; background:repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 6px, transparent 6px 12px); }
 .pack .crimp.tp{ top:0; } .pack .crimp.bt{ bottom:0; }
 .pack .tearline{ position:absolute; left:6%; right:6%; top:calc(22% - 2px); border-bottom:3px dashed rgba(255,255,255,.75); }
-.pack .label{ position:absolute; z-index:3; left:0; right:0; top:28%; text-align:center; pointer-events:none; }
+.pack .label{ transform:translateZ(10px); position:absolute; left:0; right:0; top:28%; text-align:center; pointer-events:none; }
 .pack .label img{ width:80%; height:auto; filter:drop-shadow(0 4px 6px rgba(0,0,0,.5)); }
 .pack .label b{ display:block; font-family:Bungee, Impact, sans-serif; font-weight:400; font-size:calc(var(--w) * .2); line-height:.95; color:#fff; text-shadow:0 4px 0 #2a0f6a, 0 8px 14px rgba(0,0,0,.5); }
 .pack .label span{ display:inline-block; margin-top:10px; padding:4px 12px; border-radius:999px; background:var(--gold); color:var(--ink); font-weight:900; font-size:14px; }
@@ -158,12 +169,12 @@ button{ font:inherit; cursor:pointer; }
 <section class="view on" id="ripView" role="tabpanel" aria-labelledby="tabRip">
   <div class="stats" id="stats"></div>
   <div id="ripStage"><div id="table">
-    <button class="pack" id="pack" aria-label="Rip open a pack">
+    <div class="packbox"><button class="pack" id="pack" aria-label="Rip open a pack">
       <span class="stack" id="stack"><i style="transform:rotate(-4deg)"></i><i style="transform:rotate(3deg)"></i><i></i></span>
-      <span class="half t" id="packTop"><span class="wrap"><span class="crimp tp"></span><span class="tearline"></span></span></span>
-      <span class="lower" id="packLow"><span class="half b"><span class="wrap"><span class="crimp bt"></span></span></span>
+      <span class="grp" id="packTop"><span class="slab back" style="transform:translateZ(-9.0px)"></span><span class="slab" style="transform:translateZ(-7.2px)"></span><span class="slab" style="transform:translateZ(-5.4px)"></span><span class="slab" style="transform:translateZ(-3.6px)"></span><span class="slab" style="transform:translateZ(-1.8px)"></span><span class="slab" style="transform:translateZ(0.0px)"></span><span class="slab" style="transform:translateZ(1.8px)"></span><span class="slab" style="transform:translateZ(3.6px)"></span><span class="slab" style="transform:translateZ(5.4px)"></span><span class="slab" style="transform:translateZ(7.2px)"></span><span class="half t"><span class="wrap"><span class="crimp tp"></span><span class="tearline"></span></span></span></span>
+      <span class="lower" id="packLow"><span class="slab back" style="transform:translateZ(-9.0px)"></span><span class="slab" style="transform:translateZ(-7.2px)"></span><span class="slab" style="transform:translateZ(-5.4px)"></span><span class="slab" style="transform:translateZ(-3.6px)"></span><span class="slab" style="transform:translateZ(-1.8px)"></span><span class="slab" style="transform:translateZ(0.0px)"></span><span class="slab" style="transform:translateZ(1.8px)"></span><span class="slab" style="transform:translateZ(3.6px)"></span><span class="slab" style="transform:translateZ(5.4px)"></span><span class="slab" style="transform:translateZ(7.2px)"></span><span class="half b"><span class="wrap"><span class="crimp bt"></span></span></span>
       <span class="label" id="packLabel"><b>RIP<br>CITY</b><span id="packCount">5 cards</span></span></span>
-    </button>
+    </button></div>
     <div class="pulls" id="pulls" hidden></div>
     <p class="hint" id="hint">Tap the pack to rip it open!</p>
     <div class="after" id="after" hidden><button class="btn primary" id="againBtn">Rip another pack</button><button class="btn" id="toBinder">See my binder</button></div>
@@ -259,8 +270,9 @@ $('#pack').onclick = async () => {
 (function tearEdge() {
   const pts = [], n = 18; for (let i = 0; i <= n; i++) pts.push([i / n * 100, 22 + (i % 2 ? 1.6 : -1.6) + (Math.random() - .5) * 1.2]);
   const edge = pts.map(([x, y]) => `${x}% ${y}%`);
-  $('#packTop').style.clipPath = `polygon(0% 0%, 100% 0%, ${edge.slice().reverse().join(', ')})`;
-  $('#pack .half.b').style.clipPath = `polygon(${edge.join(', ')}, 100% 100%, 0% 100%)`;
+  const topClip = `polygon(0% 0%, 100% 0%, ${edge.slice().reverse().join(', ')})`, lowClip = `polygon(${edge.join(', ')}, 100% 100%, 0% 100%)`;
+  document.querySelectorAll('#packTop > *').forEach(e => e.style.clipPath = topClip);
+  document.querySelectorAll('#packLow > .slab, #packLow > .half').forEach(e => e.style.clipPath = lowClip);
 })();
 async function ripAnim(p) {
   const top = $('#packTop'), low = $('#packLow'), stack = $('#stack');
@@ -268,17 +280,18 @@ async function ripAnim(p) {
   ripSound();
   top.animate([
     { transform:'none' },
-    { transform:'translate(1%, -2%) rotate(-3deg)', offset:.25 },
-    { transform:'translate(-6%, -14%) rotate(-22deg)', offset:.55 },
-    { transform:'translate(-70%, -150%) rotate(-75deg)', opacity:0 }
+    { transform:'translateZ(6px) translate(1%, -2%) rotateX(-14deg) rotate(-3deg)', offset:.25 },
+    { transform:'translateZ(40px) translate(-6%, -14%) rotateX(-38deg) rotate(-22deg)', offset:.55 },
+    { transform:'translateZ(120px) translate(-70%, -150%) rotateX(-70deg) rotate(-75deg)', opacity:0 }
   ], { duration:900 * slow, easing:'cubic-bezier(.4,.1,.3,1)', fill:'forwards' });
   setTimeout(() => shreds(p), 180 * slow);
   setTimeout(ripSound, 260 * slow);
   await sleep(420 * slow);
-  stack.animate([{ opacity:1, transform:'translateY(6%)' }, { opacity:1, transform:'translateY(-42%)' }], { duration:520 * slow, easing:'cubic-bezier(.2,.8,.3,1)', fill:'forwards' });
+  stack.animate([{ opacity:1, transform:'translateZ(-4px) translateY(6%)' }, { opacity:1, transform:'translateZ(-4px) translateY(-42%)' }], { duration:520 * slow, easing:'cubic-bezier(.2,.8,.3,1)', fill:'forwards' });
   tone(420, .1); setTimeout(() => tone(560, .1), 160);
   await sleep(560 * slow);
-  low.animate([{ transform:'none', opacity:1 }, { transform:'translateY(70%) rotate(4deg)', opacity:0 }], { duration:450 * slow, easing:'cubic-bezier(.5,0,.8,.4)', fill:'forwards' });
+  low.animate([{ transform:'none' }, { transform:'translateY(90%) translateZ(-30px) rotateX(25deg) rotate(4deg)' }], { duration:450 * slow, easing:'cubic-bezier(.5,0,.8,.4)', fill:'forwards' });
+  low.querySelectorAll('.half, .label, .slab').forEach(e => e.animate([{ opacity:1 }, { opacity:0 }], { duration:250 * slow, delay:200 * slow, fill:'forwards' }));
   await sleep(260 * slow);
 }
 function shreds(p) {
@@ -291,6 +304,27 @@ function shreds(p) {
     s.animate([{ transform:'none', opacity:1 }, { transform:`translate(${dx}px, ${dy}px) rotate(${rot}deg)`, opacity:1, offset:.6 }, { transform:`translate(${dx * 1.3}px, ${dy + 160}px) rotate(${rot * 1.5}deg)`, opacity:0 }], { duration:900 + Math.random() * 400, easing:'ease-out' }).onfinish = () => s.remove();
   }
 }
+(function packTilt() {
+  const p = $('#pack'), stage = $('#ripStage'); let last = 0; const t0 = performance.now();
+  const sh = document.createElement('div'); sh.className = 'pshadow'; p.parentNode.insertBefore(sh, p);
+  const set = (rx, ry) => {
+    p.style.setProperty('--rx', rx + 'deg'); p.style.setProperty('--ry', ry + 'deg');
+    p.querySelectorAll('.wrap').forEach(w => { w.style.setProperty('--sx', (50 - ry * 1.6) + '%'); w.style.setProperty('--sy', (46 + rx * 1.6) + '%'); });
+    const w = p.offsetWidth || 240; sh.style.width = w * .9 + 'px'; sh.style.marginLeft = -w * .45 + 'px';
+    sh.style.transform = `translateY(${w * .8}px) translateX(${ry * 1.5}px) scaleX(${1 - Math.abs(ry) / 90})`;
+  };
+  stage.addEventListener('pointermove', e => {
+    if (p.hidden || p.classList.contains('ripped')) return;
+    const r = p.getBoundingClientRect(), x = (e.clientX - (r.left + r.width / 2)) / (stage.clientWidth / 2), y = (e.clientY - (r.top + r.height / 2)) / (stage.clientHeight / 2);
+    last = performance.now(); set(Math.max(-1, Math.min(1, y)) * -16, Math.max(-1, Math.min(1, x)) * 28);
+  });
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  (function loop(now) {
+    const ripped = p.hidden || p.classList.contains('ripped'); sh.style.opacity = ripped ? 0 : 1;
+    if (!reduce && !ripped && now - last > 1500) { const t = (now - t0) / 1000; set(Math.sin(t * .9) * 5, Math.sin(t * .6) * 22); }
+    requestAnimationFrame(loop);
+  })(t0);
+})();
 function flip(b, x) {
   if (b.classList.contains('up')) { openZoom(x.c); return; }
   b.classList.add('up'); b.setAttribute('aria-label', `${x.c.name}, ${RLABEL[x.c.rarity]}${x.isNew ? ', new' : ''}. Tap to look closer.`);
