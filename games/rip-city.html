@@ -36,9 +36,12 @@ button{ font:inherit; cursor:pointer; }
 .pack{ --w:min(240px, 52vw); position:relative; width:var(--w); height:calc(var(--w) * 1.5); border:0; padding:0; background:none; transition:transform .25s; animation:bob 2.4s ease-in-out infinite; }
 .pack:hover{ transform:translateY(-6px) rotate(-1.5deg); }
 @keyframes bob{ 0%,100%{ translate:0 0; } 50%{ translate:0 -8px; } }
-.pack .half{ position:absolute; left:0; right:0; overflow:hidden; transition:transform .6s cubic-bezier(.3,.7,.2,1), opacity .6s; }
-.pack .half.t{ top:0; height:22%; transform-origin:0 100%; }
-.pack .half.b{ bottom:0; height:78%; }
+.pack .half{ position:absolute; inset:0; z-index:2; }
+.pack .half.t{ z-index:3; transform-origin:0% 22%; }
+.pack .stack{ position:absolute; left:12%; width:76%; top:16%; aspect-ratio:5/7; z-index:1; opacity:0; }
+.pack .stack i{ position:absolute; inset:0; border-radius:8px; background:#1c0f38 var(--back) center/100% 100%; box-shadow:0 2px 3px rgba(0,0,0,.5); }
+.pack .lower{ position:absolute; inset:0; z-index:2; }
+.shred{ position:absolute; z-index:5; width:10px; height:6px; background:linear-gradient(135deg,#fff,#c9b6ff 40%,#ff7ab6); border-radius:1px; pointer-events:none; }
 .pack .wrap{ position:absolute; left:0; width:100%; height:calc(var(--w) * 1.5); border-radius:14px; background:
   linear-gradient(115deg, transparent 30%, rgba(255,255,255,.55) 45%, transparent 60%) no-repeat,
   repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 10px, transparent 10px 20px),
@@ -47,21 +50,23 @@ button{ font:inherit; cursor:pointer; }
 .pack .half.t .wrap{ top:0; } .pack .half.b .wrap{ bottom:0; }
 .pack .crimp{ position:absolute; left:0; right:0; height:14px; background:repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 6px, transparent 6px 12px); }
 .pack .crimp.tp{ top:0; } .pack .crimp.bt{ bottom:0; }
-.pack .tearline{ position:absolute; left:6%; right:6%; bottom:2px; border-bottom:3px dashed rgba(255,255,255,.75); }
-.pack .label{ position:absolute; left:0; right:0; top:28%; text-align:center; pointer-events:none; }
+.pack .tearline{ position:absolute; left:6%; right:6%; top:calc(22% - 2px); border-bottom:3px dashed rgba(255,255,255,.75); }
+.pack .label{ position:absolute; z-index:3; left:0; right:0; top:28%; text-align:center; pointer-events:none; }
 .pack .label img{ width:80%; height:auto; filter:drop-shadow(0 4px 6px rgba(0,0,0,.5)); }
 .pack .label b{ display:block; font-family:Bungee, Impact, sans-serif; font-weight:400; font-size:calc(var(--w) * .2); line-height:.95; color:#fff; text-shadow:0 4px 0 #2a0f6a, 0 8px 14px rgba(0,0,0,.5); }
 .pack .label span{ display:inline-block; margin-top:10px; padding:4px 12px; border-radius:999px; background:var(--gold); color:var(--ink); font-weight:900; font-size:14px; }
 .pack.ripped{ animation:none; }
-.pack.ripped .half.t{ transform:translate(40%, -140%) rotate(28deg); opacity:0; }
-.pack.ripped .half.b{ transform:translateY(80%) scale(.9); opacity:0; }
+
 .pack.shake{ animation:shake .35s; }
 @keyframes shake{ 25%{ transform:rotate(-4deg); } 75%{ transform:rotate(4deg); } }
 .hint{ position:absolute; bottom:64px; left:0; right:0; text-align:center; font-weight:900; font-size:18px; text-shadow:0 2px 6px rgba(0,0,0,.6); }
 .pulls{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:clamp(8px, 2vw, 22px); flex-wrap:wrap; padding:20px 20px 104px; transform-style:preserve-3d; }
 .slot{ perspective:1000px; }
-.flip{ --cw:min(170px, 17vw); width:var(--cw); aspect-ratio:5/7; border:0; padding:0; background:none; position:relative; transform-style:preserve-3d; transition:transform .7s cubic-bezier(.3,.7,.2,1); transform:rotateY(180deg) translateY(40px); opacity:0; }
-.flip.in{ opacity:1; transform:rotateY(180deg); transition:transform .5s, opacity .3s; }
+.flip{ --cw:min(170px, 17vw); width:var(--cw); aspect-ratio:5/7; border:0; padding:0; background:none; position:relative; transform-style:preserve-3d; transition:transform .7s cubic-bezier(.3,.7,.2,1); transform:translate(var(--dx, 0px), var(--dy, 40px)) rotateY(180deg) rotateZ(var(--dr, 0deg)) scale(.75); }
+.flip.in{ transform:rotateY(180deg); transition:transform .55s cubic-bezier(.2,.8,.3,1); }
+.flip .face{ visibility:hidden; transition:visibility 0s .3s; }
+.flip.up .face{ visibility:visible; }
+.flip.up .back{ visibility:hidden; transition:visibility 0s .3s; }
 .flip.up{ transform:none; }
 .flip .face, .flip .back{ position:absolute; inset:0; border-radius:12px; overflow:hidden; backface-visibility:hidden; -webkit-backface-visibility:hidden; box-shadow:0 14px 26px rgba(0,0,0,.55); }
 .flip .back{ transform:rotateY(180deg); background:#1c0f38 var(--back) center/100% 100% no-repeat; }
@@ -118,8 +123,18 @@ button{ font:inherit; cursor:pointer; }
 .ov{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(8,5,16,.82); z-index:40; padding:20px; flex-direction:column; gap:14px; }
 .ov.on{ display:flex; }
 .zoom{ --zw:min(360px, 78vw, 54vh); width:var(--zw); aspect-ratio:5/7; perspective:900px; }
-.zoom .card3d{ width:100%; height:100%; border-radius:16px; overflow:hidden; position:relative; transform-style:preserve-3d; transition:transform .1s; box-shadow:0 30px 60px rgba(0,0,0,.6); }
+.zoom .card3d{ width:100%; height:100%; position:relative; transform-style:preserve-3d; transition:transform .12s; }
+.zflip{ position:absolute; inset:0; transform-style:preserve-3d; transition:transform .7s cubic-bezier(.3,.7,.2,1); cursor:pointer; }
+.zflip.over{ transform:rotateY(180deg); }
+.zface, .zback{ position:absolute; inset:0; border-radius:16px; overflow:hidden; backface-visibility:hidden; -webkit-backface-visibility:hidden; box-shadow:0 30px 60px rgba(0,0,0,.6); }
+.zface{ transform:translateZ(3px); transition:visibility 0s .35s; }
+.zback{ transform:rotateY(180deg) translateZ(3px); background:#1c0f38 var(--back) center/100% 100%; visibility:hidden; transition:visibility 0s .35s; }
+.zflip.over .zface{ visibility:hidden; } .zflip.over .zback{ visibility:visible; }
+.zedge{ position:absolute; background:linear-gradient(90deg,#f4f0ff,#a99cc8,#f4f0ff); }
+.zedge.l, .zedge.r{ top:12px; bottom:12px; width:6px; } .zedge.l{ left:-3px; transform:rotateY(90deg); } .zedge.r{ right:-3px; transform:rotateY(90deg); }
+.zedge.t, .zedge.b{ left:12px; right:12px; height:6px; } .zedge.t{ top:-3px; transform:rotateX(90deg); } .zedge.b{ bottom:-3px; transform:rotateX(90deg); }
 .zoom img{ width:100%; height:100%; object-fit:cover; display:block; }
+.ztip{ margin:0; font-weight:800; font-size:14px; color:#bfb2dd; }
 .zoom .glare{ position:absolute; inset:0; background:radial-gradient(circle at var(--gx,50%) var(--gy,30%), rgba(255,255,255,.45), transparent 45%); mix-blend-mode:soft-light; pointer-events:none; }
 .zinfo{ text-align:center; }
 .zinfo h3{ margin:0; font-family:Bungee, Impact, sans-serif; font-weight:400; font-size:26px; }
@@ -144,9 +159,10 @@ button{ font:inherit; cursor:pointer; }
   <div class="stats" id="stats"></div>
   <div id="ripStage"><div id="table">
     <button class="pack" id="pack" aria-label="Rip open a pack">
-      <span class="half t"><span class="wrap"><span class="crimp tp"></span><span class="tearline"></span></span></span>
-      <span class="half b"><span class="wrap"><span class="crimp bt"></span></span></span>
-      <span class="label" id="packLabel"><b>RIP<br>CITY</b><span id="packCount">5 cards</span></span>
+      <span class="stack" id="stack"><i style="transform:rotate(-4deg)"></i><i style="transform:rotate(3deg)"></i><i></i></span>
+      <span class="half t" id="packTop"><span class="wrap"><span class="crimp tp"></span><span class="tearline"></span></span></span>
+      <span class="lower" id="packLow"><span class="half b"><span class="wrap"><span class="crimp bt"></span></span></span>
+      <span class="label" id="packLabel"><b>RIP<br>CITY</b><span id="packCount">5 cards</span></span></span>
     </button>
     <div class="pulls" id="pulls" hidden></div>
     <p class="hint" id="hint">Tap the pack to rip it open!</p>
@@ -161,9 +177,12 @@ button{ font:inherit; cursor:pointer; }
 </section>
 
 <div class="ov" id="zoomOv" role="dialog" aria-modal="true" aria-labelledby="zName">
-  <div class="zoom" id="zoom"><div class="card3d" id="card3d"><img id="zImg" alt=""><div class="glare"></div></div></div>
+  <div class="zoom" id="zoom"><div class="card3d" id="card3d"><div class="zflip" id="zflip" role="button" tabindex="0" aria-label="Flip the card over">
+    <span class="zedge l"></span><span class="zedge r"></span><span class="zedge t"></span><span class="zedge b"></span>
+    <div class="zface"><img id="zImg" alt=""><div class="glare"></div></div><div class="zback"></div></div></div></div>
   <div class="zinfo"><h3 id="zName"></h3><p id="zMeta"></p></div>
-  <button class="btn" id="zClose">Back</button>
+  <p class="ztip">Tap the card to flip it over. Move over it to tilt it.</p>
+  <div style="display:flex;gap:10px"><button class="btn" id="zFlip">Flip card</button><button class="btn" id="zClose">Back</button></div>
 </div>
 <div class="ov" id="helpOv" role="dialog" aria-modal="true" aria-labelledby="helpT"><div class="panel">
   <h2 id="helpT">How Rip City works</h2>
@@ -216,22 +235,62 @@ let busy = false, flipped = 0, current = [];
 $('#pack').onclick = async () => {
   if (busy) return; busy = true; const p = $('#pack');
   p.classList.add('shake'); tone(300, .05); await sleep(350); p.classList.remove('shake');
-  ripSound(); p.classList.add('ripped'); $('#hint').textContent = '';
-  await sleep(550); p.hidden = true;
+  p.classList.add('ripped'); $('#hint').textContent = '';
+  await ripAnim(p);
   current = pullPack().map(c => ({ c, isNew:!S.have[c.id] }));
   current.forEach(x => { S.have[x.c.id] = (S.have[x.c.id] || 0) + 1; });
   S.packs++; S.pulled += current.length; save(); renderStats();
   const z = $('#pulls'); z.innerHTML = ''; z.hidden = false; flipped = 0;
+  const sr = $('#stack').getBoundingClientRect(), from = { x:sr.left + sr.width / 2, y:sr.top + sr.height / 2 }; p.hidden = true;
   current.forEach((x, i) => {
     const s = document.createElement('div'); s.className = 'slot';
     const b = document.createElement('button'); b.className = `flip ${x.c.rarity}${x.isNew ? ' new' : ''}`; b.setAttribute('aria-label', `Card ${i + 1}, face down. Tap to flip.`);
     b.innerHTML = `<span class="face"><img alt="" src="${x.c.img}">${!['common','uncommon'].includes(x.c.rarity) ? '<span class="holo"></span>' : ''}</span><span class="back"></span>`;
     b.onclick = () => flip(b, x); s.appendChild(b); z.appendChild(s);
-    setTimeout(() => { b.classList.add('in'); tone(500 + i * 60, .05); }, 120 + i * 140);
+  });
+  z.querySelectorAll('.slot').forEach((s, i) => {
+    const b = s.firstChild, r = s.getBoundingClientRect(); b.style.setProperty('--dx', (from.x - r.left - r.width / 2) + 'px'); b.style.setProperty('--dy', (from.y - r.top - r.height / 2) + 'px'); b.style.setProperty('--dr', ((Math.random() - .5) * 16) + 'deg');
+    setTimeout(() => { b.classList.add('in'); tone(500 + i * 60, .05); }, 120 + i * 170);
   });
   $('#hint').textContent = 'Tap each card to flip it!';
   setTimeout(() => z.querySelector('.flip').focus(), 300);
 };
+/* jagged tear between the top strip and the rest of the pack */
+(function tearEdge() {
+  const pts = [], n = 18; for (let i = 0; i <= n; i++) pts.push([i / n * 100, 22 + (i % 2 ? 1.6 : -1.6) + (Math.random() - .5) * 1.2]);
+  const edge = pts.map(([x, y]) => `${x}% ${y}%`);
+  $('#packTop').style.clipPath = `polygon(0% 0%, 100% 0%, ${edge.slice().reverse().join(', ')})`;
+  $('#pack .half.b').style.clipPath = `polygon(${edge.join(', ')}, 100% 100%, 0% 100%)`;
+})();
+async function ripAnim(p) {
+  const top = $('#packTop'), low = $('#packLow'), stack = $('#stack');
+  const slow = matchMedia('(prefers-reduced-motion: reduce)').matches ? .01 : 1;
+  ripSound();
+  top.animate([
+    { transform:'none' },
+    { transform:'translate(1%, -2%) rotate(-3deg)', offset:.25 },
+    { transform:'translate(-6%, -14%) rotate(-22deg)', offset:.55 },
+    { transform:'translate(-70%, -150%) rotate(-75deg)', opacity:0 }
+  ], { duration:900 * slow, easing:'cubic-bezier(.4,.1,.3,1)', fill:'forwards' });
+  setTimeout(() => shreds(p), 180 * slow);
+  setTimeout(ripSound, 260 * slow);
+  await sleep(420 * slow);
+  stack.animate([{ opacity:1, transform:'translateY(6%)' }, { opacity:1, transform:'translateY(-42%)' }], { duration:520 * slow, easing:'cubic-bezier(.2,.8,.3,1)', fill:'forwards' });
+  tone(420, .1); setTimeout(() => tone(560, .1), 160);
+  await sleep(560 * slow);
+  low.animate([{ transform:'none', opacity:1 }, { transform:'translateY(70%) rotate(4deg)', opacity:0 }], { duration:450 * slow, easing:'cubic-bezier(.5,0,.8,.4)', fill:'forwards' });
+  await sleep(260 * slow);
+}
+function shreds(p) {
+  const r = p.getBoundingClientRect(), t = $('#table').getBoundingClientRect();
+  for (let i = 0; i < 16; i++) {
+    const s = document.createElement('span'); s.className = 'shred';
+    s.style.left = (r.left - t.left + Math.random() * r.width) + 'px'; s.style.top = (r.top - t.top + r.height * .22) + 'px';
+    $('#table').appendChild(s);
+    const dx = (Math.random() - .5) * 260, dy = -60 - Math.random() * 140, rot = (Math.random() - .5) * 720;
+    s.animate([{ transform:'none', opacity:1 }, { transform:`translate(${dx}px, ${dy}px) rotate(${rot}deg)`, opacity:1, offset:.6 }, { transform:`translate(${dx * 1.3}px, ${dy + 160}px) rotate(${rot * 1.5}deg)`, opacity:0 }], { duration:900 + Math.random() * 400, easing:'ease-out' }).onfinish = () => s.remove();
+  }
+}
 function flip(b, x) {
   if (b.classList.contains('up')) { openZoom(x.c); return; }
   b.classList.add('up'); b.setAttribute('aria-label', `${x.c.name}, ${RLABEL[x.c.rarity]}${x.isNew ? ', new' : ''}. Tap to look closer.`);
@@ -250,7 +309,7 @@ function done() {
   $('#after').hidden = false; busy = false; $('#againBtn').focus();
   if (owned() === CARDS.length && !S.complete) { S.complete = true; save(); setTimeout(() => toast('BINDER COMPLETE!', '#c98a00'), 600); }
 }
-$('#againBtn').onclick = () => { $('#after').hidden = true; $('#pulls').hidden = true; const p = $('#pack'); p.hidden = false; p.classList.remove('ripped'); $('#hint').textContent = 'Tap the pack to rip it open!'; p.focus(); };
+$('#againBtn').onclick = () => { $('#after').hidden = true; $('#pulls').hidden = true; const p = $('#pack'); p.hidden = false; p.classList.remove('ripped'); p.querySelectorAll('*').forEach(e => e.getAnimations().forEach(a => a.cancel())); $('#hint').textContent = 'Tap the pack to rip it open!'; p.focus(); };
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('#zoomOv').classList.remove('on'); $('#helpOv').classList.remove('on'); } });
 
 /* ---------- stats & binder ---------- */
@@ -286,9 +345,12 @@ function renderBinder() {
 function openZoom(c) {
   $('#zImg').src = c.img; $('#zImg').alt = c.name; $('#zName').textContent = c.name;
   $('#zMeta').textContent = `${c.group} · ${RLABEL[c.rarity]}${c.by && c.by !== 'Sample' ? ' · Made by ' + c.by : ''} · You have ${S.have[c.id] || 0}`;
-  $('#zoomOv').classList.add('on'); $('#zClose').focus();
+  $('#zflip').classList.remove('over'); $('#zoomOv').classList.add('on'); $('#zClose').focus();
 }
 $('#zClose').onclick = () => $('#zoomOv').classList.remove('on');
+const zFlip = () => { $('#zflip').classList.toggle('over'); tone($('#zflip').classList.contains('over') ? 380 : 520, .07); };
+$('#zflip').onclick = zFlip; $('#zFlip').onclick = zFlip;
+$('#zflip').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); zFlip(); } };
 $('#zoomOv').onclick = e => { if (e.target.id === 'zoomOv') $('#zoomOv').classList.remove('on'); };
 $('#zoom').addEventListener('pointermove', e => { const r = $('#zoom').getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height; $('#card3d').style.transform = `rotateY(${(x - .5) * 30}deg) rotateX(${(.5 - y) * 30}deg)`; $('#card3d').style.setProperty('--gx', x * 100 + '%'); $('#card3d').style.setProperty('--gy', y * 100 + '%'); });
 $('#zoom').addEventListener('pointerleave', () => { $('#card3d').style.transform = ''; });
