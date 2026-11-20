@@ -135,6 +135,38 @@ button{ font:inherit; cursor:pointer; }
 .wholist small{ font-weight:800; color:#d8cdef; }
 .whonew{ display:flex; gap:8px; width:100%; flex-wrap:wrap; }
 .whonew input{ flex:1; min-width:160px; border-radius:12px; border:2px solid rgba(255,255,255,.3); background:rgba(0,0,0,.3); color:#fff; padding:9px 12px; font:inherit; font-weight:800; }
+#gradeView{ flex-direction:column; overflow:auto; padding:16px clamp(12px, 3vw, 36px) 40px; }
+.gintro{ margin:0 0 6px; color:#d8cdef; font-weight:700; max-width:760px; }
+.gh{ margin:18px 0 8px; font-size:20px; } .gh small{ font-size:14px; color:#d8cdef; margin-left:6px; }
+.gout{ display:flex; gap:12px; flex-wrap:wrap; }
+.gout .pend{ width:120px; text-align:center; font-weight:900; font-size:13px; color:#d8cdef; }
+.gout .pend .env{ position:relative; aspect-ratio:5/7; border-radius:10px; background:linear-gradient(160deg,#f4e7c8,#d9c49a); box-shadow:0 6px 12px rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; color:#6b4b1e; font-family:Bungee, Impact, sans-serif; font-size:13px; padding:8px; margin-bottom:6px; overflow:hidden; }
+.gout .pend .env::before{ content:""; position:absolute; left:0; right:0; top:0; height:42%; background:linear-gradient(160deg,#e8d6ad,#c9b07e); clip-path:polygon(0 0,100% 0,50% 100%); }
+.gout .pend .env span{ position:relative; margin-top:30%; }
+.gempty{ color:#bfb2dd; font-weight:800; }
+.gshow{ display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:16px; }
+.slab{ position:relative; border:0; padding:8px; border-radius:14px; background:linear-gradient(160deg, rgba(255,255,255,.55), rgba(220,230,255,.25)); box-shadow:inset 0 0 0 2px rgba(255,255,255,.7), 0 10px 20px rgba(0,0,0,.45); color:#111; text-align:left; display:flex; flex-direction:column; gap:6px; }
+.slab .lab{ display:flex; align-items:center; gap:6px; background:#fff; border-radius:8px; padding:5px 7px; border:2px solid var(--gc, #e2283b); }
+.slab .lab .nm{ flex:1; min-width:0; font-size:11px; font-weight:900; line-height:1.15; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.slab .lab .nm small{ display:block; font-weight:700; color:#555; font-size:10px; }
+.slab .lab .gr{ text-align:center; line-height:1; font-family:Bungee, Impact, sans-serif; font-size:26px; color:var(--gc, #e2283b); }
+.slab .lab .gr small{ display:block; font-family:inherit; font-size:8px; letter-spacing:.5px; color:#333; }
+.slab .win{ border-radius:8px; overflow:hidden; aspect-ratio:5/7; box-shadow:0 0 0 2px rgba(255,255,255,.8); background:#000; }
+.slab .win img{ width:100%; height:100%; object-fit:cover; display:block; }
+.slab .cert{ font-size:10px; font-weight:800; color:#333; text-align:center; }
+.slab.g10{ --gc:#c98a00; box-shadow:inset 0 0 0 2px rgba(255,255,255,.9), 0 0 0 3px #ffd23f, 0 0 24px 6px rgba(255,210,63,.6); }
+.slab.g9{ --gc:#7a2bff; } .slab.g8, .slab.g7{ --gc:#1690b8; }
+.gslot{ border:3px dashed rgba(255,255,255,.22); border-radius:14px; aspect-ratio:5/8.6; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.35); font-weight:900; text-align:center; padding:8px; }
+.gshow .sitem{ display:flex; flex-direction:column; gap:6px; }
+.gshow .sitem .btn{ padding:5px 8px; font-size:12px; }
+.grev{ max-width:440px; max-height:94vh; overflow:auto; } .grev.full .slab{ width:min(160px, 42vw); } .grev .slab{ width:min(240px, 60vw); margin:0 auto; }
+.grev .slab .lab .gr{ font-size:34px; }
+.grev .pick{ display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; width:100%; }
+.grev .pick button{ border:2px solid rgba(255,255,255,.3); background:rgba(0,0,0,.25); color:#fff; border-radius:10px; padding:4px; font-weight:900; font-size:12px; }
+.grev .pick button img{ width:100%; aspect-ratio:5/7; object-fit:cover; border-radius:6px; display:block; margin-bottom:2px; }
+.zgrade{ margin:0; font-weight:800; color:#ffe9a8; min-height:1.2em; text-align:center; }
+.revealing .lab .gr b{ display:inline-block; animation:spinG .12s linear infinite; }
+@keyframes spinG{ 50%{ transform:translateY(-3px); } }
 .savebar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:2px 0 10px; font-weight:800; font-size:14px; color:#d8cdef; }
 .codebox{ width:100%; font:12px/1.3 ui-monospace, monospace; border-radius:10px; border:2px solid rgba(255,255,255,.25); background:rgba(0,0,0,.35); color:#fff; padding:8px; resize:vertical; word-break:break-all; }
 .row2{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
@@ -170,7 +202,7 @@ button{ font:inherit; cursor:pointer; }
 <body>
 <div class="top">
   <div class="logo" id="logo"><b>RIP CITY</b></div>
-  <div class="tabs" role="tablist" aria-label="Rip City"><button role="tab" id="tabRip" aria-selected="true">Rip packs</button><button role="tab" id="tabBinder" aria-selected="false">My binder</button></div>
+  <div class="tabs" role="tablist" aria-label="Rip City"><button role="tab" id="tabRip" aria-selected="true">Rip packs</button><button role="tab" id="tabBinder" aria-selected="false">My binder</button><button role="tab" id="tabGrade" aria-selected="false">Graded</button></div>
   <button class="btn" id="whoBtn" aria-haspopup="dialog">👤 <span id="whoName">Collector 1</span></button>
   <button class="btn" id="sndBtn" aria-pressed="true">Sound on</button>
   <button class="btn" id="helpBtn">How it works</button>
@@ -198,13 +230,29 @@ button{ font:inherit; cursor:pointer; }
   <div id="groups"></div>
 </section>
 
+<section class="view" id="gradeView" role="tabpanel" aria-labelledby="tabGrade">
+  <div class="bhead"><h2>Graded cards</h2><span class="chip" id="gScore"></span></div>
+  <p class="gintro">Send a <b>double</b> to the grader from your binder (tap a card that shows ×2 or more). It comes back after you rip <b>3 more packs</b> with a grade from 1 to 10. Your showcase keeps your <b>10 best</b> graded cards.</p>
+  <h3 class="gh">At the grader <small id="gOutCount"></small></h3>
+  <div class="gout" id="gOut"></div>
+  <h3 class="gh">My showcase <small id="gCount"></small></h3>
+  <div class="gshow" id="gShow"></div>
+</section>
+
+<div class="ov" id="gradeOv" role="dialog" aria-modal="true" aria-labelledby="gRevT"><div class="panel grev">
+  <h2 id="gRevT">Back from grading!</h2>
+  <div id="gRevSlab"></div>
+  <p id="gRevMsg" style="margin:0;font-weight:800"></p>
+  <div class="row2" id="gRevBtns"></div>
+</div></div>
 <div class="ov" id="zoomOv" role="dialog" aria-modal="true" aria-labelledby="zName">
   <div class="zoom" id="zoom"><div class="card3d" id="card3d"><div class="zflip" id="zflip" role="button" tabindex="0" aria-label="Flip the card over">
     <span class="zedge l"></span><span class="zedge r"></span><span class="zedge t"></span><span class="zedge b"></span>
     <div class="zface"><img id="zImg" alt=""><div class="glare"></div></div><div class="zback"></div></div></div></div>
   <div class="zinfo"><h3 id="zName"></h3><p id="zMeta"></p></div>
   <p class="ztip">Tap the card to flip it over. Move over it to tilt it.</p>
-  <div style="display:flex;gap:10px"><button class="btn" id="zFlip">Flip card</button><button class="btn" id="zClose">Back</button></div>
+  <p class="zgrade" id="zGrade"></p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><button class="btn primary" id="zSend" hidden>📮 Send a double to be graded</button><button class="btn" id="zFlip">Flip card</button><button class="btn" id="zClose">Back</button></div>
 </div>
 <div class="ov" id="saveOv" role="dialog" aria-modal="true" aria-labelledby="saveT"><div class="panel">
   <h2 id="saveT">Save my cards</h2>
@@ -233,7 +281,7 @@ button{ font:inherit; cursor:pointer; }
   <h2 id="helpT">How Rip City works</h2>
   <p>Tap a pack to rip it open. Each pack has <b id="hPack">5</b> random cards made by Mr. Morris’ students. Tap each card to flip it over.</p>
   <p>Every card you pull goes into <b>My Binder</b>, sorted by group. Can you collect them all? Rarity from easiest to hardest: <b>Common</b>, <b>Uncommon</b>, <b>Rare</b>, <b>Epic</b>, <b>Legendary</b>, then the <b>Ultra Super Rare</b> Food Fighters and the 14 <b>Ultimate Super Rare</b> cards, one hiding in every other group. And somewhere out there is ONE card that beats them all: <b>ALL SUPREME</b>.</p>
-  <p><small>Your collection is saved on this computer. Sharing a computer? Press 👤 at the top to start your own binder. To take it to another computer, open My Binder and press <b>Save my cards</b>, then <b>Load my cards</b> on the other computer.</small></p>
+  <p><small>Your collection is saved on this computer. Got doubles? Tap one in your binder to send it to the grader, then check the <b>Graded</b> tab. Sharing a computer? Press 👤 at the top to start your own binder. To take it to another computer, open My Binder and press <b>Save my cards</b>, then <b>Load my cards</b> on the other computer.</small></p>
   <button class="btn primary" id="helpClose">Let’s rip!</button>
 </div></div>
 <div class="toast" id="toast"></div>
@@ -262,7 +310,7 @@ try { const p = JSON.parse(localStorage.getItem(KEY + '-people') || 'null'); if 
 if (!P.list.some(p => p.id === P.cur)) P.cur = P.list[0].id;
 const keyFor = id => id === 'main' ? KEY : KEY + '-p-' + id;
 const saveP = () => { try { localStorage.setItem(KEY + '-people', JSON.stringify(P)); } catch (e) {} };
-const loadS = id => { const s = { have:{}, packs:0, pulled:0 }; try { Object.assign(s, JSON.parse(localStorage.getItem(keyFor(id)) || '{}')); } catch (e) {} return s; };
+const loadS = id => { const s = { have:{}, packs:0, pulled:0, graded:[], out:[] }; try { Object.assign(s, JSON.parse(localStorage.getItem(keyFor(id)) || '{}')); } catch (e) {} return s; };
 let S = loadS(P.cur);
 const save = () => { try { localStorage.setItem(keyFor(P.cur), JSON.stringify(S)); } catch (e) {} };
 const $ = s => document.querySelector(s);
@@ -277,7 +325,11 @@ if (LOGO) { $('#logo').innerHTML = `<img src="${LOGO}" alt="Rip City">`; $('#pac
 $('#packCount').textContent = `${PACK_SIZE} cards`; $('#hPack').textContent = PACK_SIZE;
 
 /* ---------- tabs ---------- */
-function tab(which) { const rip = which === 'rip'; $('#tabRip').setAttribute('aria-selected', rip); $('#tabBinder').setAttribute('aria-selected', !rip); $('#ripView').classList.toggle('on', rip); $('#binderView').classList.toggle('on', !rip); if (!rip) renderBinder(); }
+function tab(which) {
+  [['rip', '#tabRip', '#ripView'], ['binder', '#tabBinder', '#binderView'], ['grade', '#tabGrade', '#gradeView']].forEach(([k, t, v]) => { $(t).setAttribute('aria-selected', k === which); $(v).classList.toggle('on', k === which); });
+  if (which === 'binder') renderBinder(); if (which === 'grade') renderGrade();
+}
+$('#tabGrade').onclick = () => tab('grade');
 $('#tabRip').onclick = () => tab('rip'); $('#tabBinder').onclick = () => tab('binder'); $('#toBinder').onclick = () => tab('binder');
 $('#helpBtn').onclick = () => $('#helpOv').classList.add('on'); $('#helpClose').onclick = () => $('#helpOv').classList.remove('on');
 
@@ -292,7 +344,7 @@ $('#pack').onclick = async () => {
   await ripAnim(p);
   current = pullPack().map(c => ({ c, isNew:!S.have[c.id] }));
   current.forEach(x => { S.have[x.c.id] = (S.have[x.c.id] || 0) + 1; });
-  S.packs++; S.pulled += current.length; save(); renderStats();
+  S.packs++; S.pulled += current.length; save(); renderStats(); gradeTick();
   const z = $('#pulls'); z.innerHTML = ''; z.hidden = false; flipped = 0;
   const sr = $('#stack').getBoundingClientRect(), from = { x:sr.left + sr.width / 2, y:sr.top + sr.height / 2 }; p.hidden = true;
   current.forEach((x, i) => {
@@ -390,6 +442,7 @@ function done() {
   const nw = current.filter(x => x.isNew).length;
   $('#hint').textContent = nw ? `${nw} new card${nw === 1 ? '' : 's'} for your binder!` : 'All doubles this time. Keep ripping!';
   $('#after').hidden = false; busy = false; $('#againBtn').focus();
+  setTimeout(nextReturn, 700);
   if (owned() === CARDS.length && !S.complete) { S.complete = true; save(); setTimeout(() => toast('BINDER COMPLETE!', '#c98a00'), 600); }
 }
 $('#againBtn').onclick = () => { $('#after').hidden = true; $('#pulls').hidden = true; const p = $('#pack'); p.hidden = false; p.classList.remove('ripped'); p.querySelectorAll('*').forEach(e => e.getAnimations().forEach(a => a.cancel())); $('#hint').textContent = 'Tap the pack to rip it open!'; p.focus(); };
@@ -428,9 +481,12 @@ function renderBinder() {
 function openZoom(c) {
   $('#zImg').src = c.img; $('#zImg').alt = c.name; $('#zName').textContent = c.name;
   $('#zMeta').textContent = `${c.group} · ${RLABEL[c.rarity]}${c.by && c.by !== 'Sample' ? ' · Made by ' + c.by : ''} · You have ${S.have[c.id] || 0}`;
+  G(); const n = S.have[c.id] || 0, out = S.out.filter(o => o.id === c.id).length, best = S.graded.filter(s => s.id === c.id).sort((a, b) => b.grade - a.grade)[0];
+  $('#zGrade').textContent = [best ? `Best grade: ${best.grade} ${GRADE_WORD[best.grade]}` : '', out ? `${out} at the grader` : '', n < 2 ? 'Get a double of this card to send it for grading.' : ''].filter(Boolean).join(' · ');
+  const zs = $('#zSend'); zs.dataset.id = c.id; zs.hidden = n < 2; zs.disabled = S.out.length >= MAX_OUT; zs.textContent = S.out.length >= MAX_OUT ? `Grader is full (${MAX_OUT} cards out)` : '📮 Send a double to be graded';
   $('#zflip').classList.remove('over'); $('#zoomOv').classList.add('on'); $('#zClose').focus();
 }
-$('#zClose').onclick = () => $('#zoomOv').classList.remove('on');
+$('#zClose').onclick = () => { $('#zoomOv').classList.remove('on'); if ($('#binderView').classList.contains('on')) renderBinder(); };
 const zFlip = () => { $('#zflip').classList.toggle('over'); tone($('#zflip').classList.contains('over') ? 380 : 520, .07); };
 $('#zflip').onclick = zFlip; $('#zFlip').onclick = zFlip;
 $('#zflip').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); zFlip(); } };
@@ -440,7 +496,7 @@ $('#zoom').addEventListener('pointerleave', () => { $('#card3d').style.transform
 
 /* ---------- take your cards with you ---------- */
 const SAVE_TAG = 'RIPCITY1:';
-function saveCode() { const data = { have:S.have, packs:S.packs, pulled:S.pulled, complete:S.complete || false, at:Date.now() }; return SAVE_TAG + btoa(unescape(encodeURIComponent(JSON.stringify(data)))); }
+function saveCode() { G(); const data = { have:S.have, packs:S.packs, pulled:S.pulled, complete:S.complete || false, graded:S.graded, out:S.out, at:Date.now() }; return SAVE_TAG + btoa(unescape(encodeURIComponent(JSON.stringify(data)))); }
 function downloadSave(code) { try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([code], { type:'text/plain' })); a.download = 'rip-city-cards.txt'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); } catch (e) {} }
 $('#saveBtn').onclick = () => { const c = saveCode(); $('#saveCode').value = c; $('#saveOv').classList.add('on'); downloadSave(c); };
 $('#saveDl').onclick = () => downloadSave($('#saveCode').value);
@@ -455,6 +511,9 @@ $('#loadGo').onclick = () => {
   if (!data || typeof data.have !== 'object') { $('#loadMsg').textContent = 'That save code didn’t work. Check that you copied all of it.'; return; }
   const known = new Set(CARDS.map(c => c.id)); let added = 0;
   Object.entries(data.have).forEach(([id, n]) => { n = Math.max(0, Math.floor(+n || 0)); if (!known.has(id) || !n) return; if (!S.have[id]) added++; S.have[id] = Math.max(S.have[id] || 0, n); });
+  G(); const certs = new Set([...S.graded, ...S.out].map(x => x.cert));
+  (Array.isArray(data.graded) ? data.graded : []).forEach(x => { if (x && known.has(x.id) && !certs.has(x.cert) && S.graded.length < SHOWCASE && x.grade >= 1 && x.grade <= 10) { S.graded.push({ id:x.id, cert:String(x.cert), grade:Math.round(x.grade), at:+x.at || Date.now() }); certs.add(x.cert); } });
+  (Array.isArray(data.out) ? data.out : []).forEach(x => { if (x && known.has(x.id) && !certs.has(x.cert) && S.out.length < MAX_OUT) { S.out.push({ id:x.id, cert:String(x.cert), left:Math.max(0, +x.left || 0) }); certs.add(x.cert); } });
   S.packs = Math.max(S.packs || 0, +data.packs || 0); S.pulled = Math.max(S.pulled || 0, +data.pulled || 0, Object.values(S.have).reduce((a, b) => a + b, 0));
   if (data.complete) S.complete = true; save(); renderStats(); renderBinder();
   $('#loadMsg').textContent = `Loaded! ${added} new card${added === 1 ? '' : 's'} added to this binder.`; setTimeout(() => $('#loadOv').classList.remove('on'), 1500);
@@ -472,7 +531,7 @@ function renderWho() {
 function switchTo(id) {
   if (busy) { $('#whoMsg').textContent = 'Finish flipping your cards first!'; return; }
   save(); P.cur = id; saveP(); S = loadS(id); paintWho(); renderStats();
-  if ($('#binderView').classList.contains('on')) renderBinder();
+  if ($('#binderView').classList.contains('on')) renderBinder(); if ($('#gradeView').classList.contains('on')) renderGrade();
   $('#after').hidden = true; $('#pulls').hidden = true; const p = $('#pack'); p.hidden = false; p.classList.remove('ripped'); p.querySelectorAll('*').forEach(e => e.getAnimations().forEach(a => a.cancel())); $('#hint').textContent = 'Tap the pack to rip it open!';
   renderWho(); $('#whoMsg').textContent = `Now ripping as ${curP().name}.`;
 }
@@ -488,7 +547,62 @@ $('#whoNew').onkeydown = e => { if (e.key === 'Enter') $('#whoAdd').click(); };
 $('#whoRenGo').onclick = () => { const name = $('#whoRen').value.trim().slice(0, 24); if (!name) return; curP().name = name; saveP(); paintWho(); renderWho(); $('#whoMsg').textContent = 'Renamed!'; };
 paintWho();
 
-renderStats();
+/* ---------- grading ---------- */
+const GRADE_WORD = { 10:'GEM MINT', 9:'MINT', 8:'NM-MT', 7:'NEAR MINT', 6:'EX-MT', 5:'EXCELLENT', 4:'VG-EX', 3:'VERY GOOD', 2:'GOOD', 1:'POOR' };
+const GRADE_ODDS = [[10, 4], [9, 11], [8, 19], [7, 22], [6, 16], [5, 11], [4, 7], [3, 5], [2, 3], [1, 2]];
+const SHOWCASE = 10, MAX_OUT = 3, WAIT_PACKS = 3;
+const G = () => { S.graded = S.graded || []; S.out = S.out || []; return S; };
+const cardById = id => CARDS.find(c => c.id === id);
+function rollGrade() { const t = GRADE_ODDS.reduce((a, [, w]) => a + w, 0); let r = Math.random() * t; for (const [g, w] of GRADE_ODDS) { r -= w; if (r <= 0) return g; } return 7; }
+function slabHTML(s, extra = '') { const c = cardById(s.id); if (!c) return ''; const esc = t => t.replace(/[<>&"]/g, '');
+  return `<div class="slab g${s.grade} ${extra}"><div class="lab"><div class="nm">${esc(c.name)}<small>${esc(c.group)} · ${RLABEL[c.rarity]}</small><small>RIP CITY GRADING</small></div><div class="gr"><b>${s.grade}</b><small>${GRADE_WORD[s.grade]}</small></div></div><div class="win"><img alt="" src="${c.img}"></div><div class="cert">CERT #${s.cert}</div></div>`; }
+function sendToGrade(c) {
+  G(); if ((S.have[c.id] || 0) < 2) return;
+  if (S.out.length >= MAX_OUT) { toast('GRADER IS FULL!', '#8a3ffc'); return; }
+  S.have[c.id]--; S.out.push({ id:c.id, left:WAIT_PACKS, cert:String(Math.floor(10000000 + Math.random() * 89999999)) }); save();
+  tone(500, .08); setTimeout(() => tone(700, .1), 90); toast('SENT TO THE GRADER!', '#1690b8'); openZoom(c);
+}
+function gradeTick() { // called once per ripped pack
+  G(); if (!S.out.length) return; S.out.forEach(o => o.left--); save();
+}
+let revBusy = false;
+function nextReturn() {
+  G(); const o = S.out.find(x => x.left <= 0); if (!o || revBusy) return; revBusy = true;
+  S.out = S.out.filter(x => x !== o); const s = { id:o.id, cert:o.cert, grade:rollGrade(), at:Date.now() }; save();
+  $('#gradeOv .panel').classList.remove('full'); $('#gRevT').textContent = 'Back from grading!'; $('#gRevBtns').innerHTML = ''; $('#gRevMsg').textContent = 'The grader is looking closely…';
+  $('#gRevSlab').innerHTML = slabHTML(Object.assign({}, s, { grade:1 }), 'revealing'); $('#gradeOv').classList.add('on');
+  let k = 0; const spin = setInterval(() => { const g = 1 + Math.floor(Math.random() * 10); $('#gRevSlab .gr b').textContent = g; $('#gRevSlab .gr small').textContent = GRADE_WORD[g]; tone(300 + g * 40, .03); if (++k > 16) { clearInterval(spin); reveal(s); } }, 90);
+}
+function reveal(s) {
+  $('#gRevSlab').innerHTML = slabHTML(s); const c = cardById(s.id);
+  if (s.grade === 10) { toast('GEM MINT 10!', '#c98a00'); [523, 659, 784, 1046, 1318].forEach((f, k) => setTimeout(() => tone(f, .2), k * 90)); }
+  else if (s.grade >= 8) { tone(660, .12); setTimeout(() => tone(880, .2), 100); } else tone(420, .12);
+  const btns = $('#gRevBtns'), msg = $('#gRevMsg'); G();
+  const finish = text => { msg.textContent = text; btns.innerHTML = '<button class="btn primary" id="gRevOk">Awesome!</button>'; $('#gRevOk').onclick = () => { $('#gradeOv').classList.remove('on'); revBusy = false; renderStats(); if ($('#gradeView').classList.contains('on')) renderGrade(); if ($('#binderView').classList.contains('on')) renderBinder(); setTimeout(nextReturn, 300); }; $('#gRevOk').focus(); };
+  if (S.graded.length < SHOWCASE) { S.graded.push(s); save(); finish(`${c.name} got a ${s.grade}! It's in your showcase (${S.graded.length} of ${SHOWCASE}).`); return; }
+  $('#gradeOv .panel').classList.add('full');
+  msg.textContent = `Your showcase is full. Pick a slab to swap out for this ${s.grade}, or keep your showcase the way it is. Any card you don't keep goes back to your binder.`;
+  const sorted = S.graded.slice().sort((a, b) => a.grade - b.grade);
+  btns.innerHTML = `<div class="pick">${sorted.map(x => { const cc = cardById(x.id); return `<button data-cert="${x.cert}"><img alt="" src="${cc ? cc.img : ''}">${x.grade}</button>`; }).join('')}</div><button class="btn" id="gToss">Keep my showcase (card goes back to binder)</button>`;
+  btns.querySelectorAll('.pick button').forEach(b => b.onclick = () => { const old = S.graded.find(x => x.cert === b.dataset.cert); S.graded = S.graded.filter(x => x !== old); S.have[old.id] = (S.have[old.id] || 0) + 1; S.graded.push(s); save(); finish(`Swapped! ${c.name} (${s.grade}) is in your showcase. Your old ${old.grade} went back to your binder.`); });
+  $('#gToss').onclick = () => { S.have[s.id] = (S.have[s.id] || 0) + 1; save(); finish(`${c.name} went back to your binder.`); };
+}
+function crack(cert) { G(); const s = S.graded.find(x => x.cert === cert); if (!s) return; S.graded = S.graded.filter(x => x !== s); S.have[s.id] = (S.have[s.id] || 0) + 1; save(); renderGrade(); toast('CRACKED OPEN!', '#e2283b'); }
+function renderGrade() {
+  G(); const sorted = S.graded.slice().sort((a, b) => b.grade - a.grade || b.at - a.at);
+  const tot = sorted.reduce((a, s) => a + s.grade, 0);
+  $('#gScore').textContent = `Showcase score: ${tot} / ${SHOWCASE * 10}`;
+  $('#gOutCount').textContent = `(${S.out.length} of ${MAX_OUT})`; $('#gCount').textContent = `(${sorted.length} of ${SHOWCASE})`;
+  $('#gOut').innerHTML = S.out.length ? S.out.map(o => { const c = cardById(o.id); return c ? `<div class="pend"><div class="env"><span>RIP CITY GRADING</span></div>${c.name.replace(/[<>&"]/g, '')}<br>back in ${Math.max(0, o.left)} pack${o.left === 1 ? '' : 's'}</div>` : ''; }).join('') : '<p class="gempty">Nothing at the grader right now.</p>';
+  let html = sorted.map(s => `<div class="sitem">${slabHTML(s)}<button class="btn" data-crack="${s.cert}" title="Take it out of the slab and put it back in your binder">Crack open</button></div>`).join('');
+  for (let i = sorted.length; i < SHOWCASE; i++) html += `<div class="gslot">Empty slot ${i + 1}</div>`;
+  $('#gShow').innerHTML = html;
+  $('#gShow').querySelectorAll('[data-crack]').forEach(b => b.onclick = () => { if (confirmCrack(b)) crack(b.dataset.crack); });
+}
+function confirmCrack(b) { if (b.dataset.sure) return true; b.dataset.sure = '1'; b.textContent = 'Tap again to crack'; setTimeout(() => { if (b.isConnected) { delete b.dataset.sure; b.textContent = 'Crack open'; } }, 2500); return false; }
+$('#zSend').onclick = () => { const c = cardById($('#zSend').dataset.id); if (c) sendToGrade(c); };
+
+renderStats(); setTimeout(nextReturn, 1200);
 if (!S.packs) $('#helpOv').classList.add('on');
 </script>
 <script>window.__V3 = { key:'ripcity', top:'.top', before:'#helpBtn', stage:'#ripStage', target:'#table', tilt:36, spin:false, followable:false, persp:1500, extraCss:'#ripStage{ overflow:hidden; } .is3d .pulls{ transform:translateZ(30px); } .is3d .pack{ transform:translateZ(20px); }' };</script>
