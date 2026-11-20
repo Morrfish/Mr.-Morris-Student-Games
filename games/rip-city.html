@@ -129,6 +129,12 @@ button{ font:inherit; cursor:pointer; }
 .bcard.ultra img{ box-shadow:0 0 0 3px #3dff9a, 0 0 18px 4px rgba(255,79,216,.7), 0 6px 14px rgba(0,0,0,.45); }
 .bcard.ultimate img{ box-shadow:0 0 0 3px #fff, 0 0 0 6px var(--gold), 0 0 22px 6px rgba(255,220,90,.85); }
 .filters{ display:flex; gap:6px; flex-wrap:wrap; }
+.wholist{ display:grid; gap:8px; width:100%; max-height:42vh; overflow:auto; }
+.wholist button{ display:flex; justify-content:space-between; align-items:center; gap:10px; text-align:left; border:2px solid rgba(255,255,255,.25); background:rgba(0,0,0,.25); color:#fff; border-radius:12px; padding:10px 14px; font-weight:900; font-size:16px; }
+.wholist button[aria-pressed="true"]{ border-color:var(--gold); background:rgba(255,200,61,.15); }
+.wholist small{ font-weight:800; color:#d8cdef; }
+.whonew{ display:flex; gap:8px; width:100%; flex-wrap:wrap; }
+.whonew input{ flex:1; min-width:160px; border-radius:12px; border:2px solid rgba(255,255,255,.3); background:rgba(0,0,0,.3); color:#fff; padding:9px 12px; font:inherit; font-weight:800; }
 .savebar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:2px 0 10px; font-weight:800; font-size:14px; color:#d8cdef; }
 .codebox{ width:100%; font:12px/1.3 ui-monospace, monospace; border-radius:10px; border:2px solid rgba(255,255,255,.25); background:rgba(0,0,0,.35); color:#fff; padding:8px; resize:vertical; word-break:break-all; }
 .row2{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
@@ -165,6 +171,7 @@ button{ font:inherit; cursor:pointer; }
 <div class="top">
   <div class="logo" id="logo"><b>RIP CITY</b></div>
   <div class="tabs" role="tablist" aria-label="Rip City"><button role="tab" id="tabRip" aria-selected="true">Rip packs</button><button role="tab" id="tabBinder" aria-selected="false">My binder</button></div>
+  <button class="btn" id="whoBtn" aria-haspopup="dialog">👤 <span id="whoName">Collector 1</span></button>
   <button class="btn" id="sndBtn" aria-pressed="true">Sound on</button>
   <button class="btn" id="helpBtn">How it works</button>
 </div>
@@ -213,11 +220,20 @@ button{ font:inherit; cursor:pointer; }
   <p id="loadMsg" role="status" style="min-height:1.2em;font-weight:900"></p>
   <div class="row2"><button class="btn primary" id="loadGo">Load cards</button><button class="btn" id="loadClose">Cancel</button></div>
 </div></div>
+<div class="ov" id="whoOv" role="dialog" aria-modal="true" aria-labelledby="whoT"><div class="panel">
+  <h2 id="whoT">Who's ripping?</h2>
+  <p>Each collector has their own binder on this computer. Pick yours, or start a new one.</p>
+  <div class="wholist" id="whoList"></div>
+  <div class="whonew"><input id="whoNew" maxlength="24" placeholder="New collector's name" aria-label="New collector's name"><button class="btn primary" id="whoAdd">+ Start new binder</button></div>
+  <div class="whonew"><input id="whoRen" maxlength="24" aria-label="Rename this collector"><button class="btn" id="whoRenGo">Rename me</button></div>
+  <p id="whoMsg" role="status" style="min-height:1.2em;font-weight:900;margin:0"></p>
+  <button class="btn" id="whoClose">Done</button>
+</div></div>
 <div class="ov" id="helpOv" role="dialog" aria-modal="true" aria-labelledby="helpT"><div class="panel">
   <h2 id="helpT">How Rip City works</h2>
   <p>Tap a pack to rip it open. Each pack has <b id="hPack">5</b> random cards made by Mr. Morris’ students. Tap each card to flip it over.</p>
   <p>Every card you pull goes into <b>My Binder</b>, sorted by group. Can you collect them all? Rarity from easiest to hardest: <b>Common</b>, <b>Uncommon</b>, <b>Rare</b>, <b>Epic</b>, <b>Legendary</b>, then the <b>Ultra Super Rare</b> Food Fighters and the 14 <b>Ultimate Super Rare</b> cards, one hiding in every other group. And somewhere out there is ONE card that beats them all: <b>ALL SUPREME</b>.</p>
-  <p><small>Your collection is saved on this computer. To take it to another computer, open My Binder and press <b>Save my cards</b>, then <b>Load my cards</b> on the other computer.</small></p>
+  <p><small>Your collection is saved on this computer. Sharing a computer? Press 👤 at the top to start your own binder. To take it to another computer, open My Binder and press <b>Save my cards</b>, then <b>Load my cards</b> on the other computer.</small></p>
   <button class="btn primary" id="helpClose">Let’s rip!</button>
 </div></div>
 <div class="toast" id="toast"></div>
@@ -239,8 +255,16 @@ const RLABEL = { common:'Common', uncommon:'Uncommon', rare:'Rare', epic:'Epic',
 
 /* ---------- save ---------- */
 const KEY = 'ripcity-v2';
-let S = { have:{}, packs:0, pulled:0 }; try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+/* collectors: several people can keep their own binder on one computer.
+   The first collector keeps the original save, so nobody's cards move. */
+let P = { list:[{ id:'main', name:'Collector 1' }], cur:'main' };
+try { const p = JSON.parse(localStorage.getItem(KEY + '-people') || 'null'); if (p && Array.isArray(p.list) && p.list.length) P = p; } catch (e) {}
+if (!P.list.some(p => p.id === P.cur)) P.cur = P.list[0].id;
+const keyFor = id => id === 'main' ? KEY : KEY + '-p-' + id;
+const saveP = () => { try { localStorage.setItem(KEY + '-people', JSON.stringify(P)); } catch (e) {} };
+const loadS = id => { const s = { have:{}, packs:0, pulled:0 }; try { Object.assign(s, JSON.parse(localStorage.getItem(keyFor(id)) || '{}')); } catch (e) {} return s; };
+let S = loadS(P.cur);
+const save = () => { try { localStorage.setItem(keyFor(P.cur), JSON.stringify(S)); } catch (e) {} };
 const $ = s => document.querySelector(s);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 let sound = true; try { sound = localStorage.getItem('ripcity-snd') !== 'off'; } catch (e) {}
@@ -369,7 +393,7 @@ function done() {
   if (owned() === CARDS.length && !S.complete) { S.complete = true; save(); setTimeout(() => toast('BINDER COMPLETE!', '#c98a00'), 600); }
 }
 $('#againBtn').onclick = () => { $('#after').hidden = true; $('#pulls').hidden = true; const p = $('#pack'); p.hidden = false; p.classList.remove('ripped'); p.querySelectorAll('*').forEach(e => e.getAnimations().forEach(a => a.cancel())); $('#hint').textContent = 'Tap the pack to rip it open!'; p.focus(); };
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { ['#zoomOv', '#helpOv', '#saveOv', '#loadOv'].forEach(s => $(s).classList.remove('on')); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { ['#zoomOv', '#helpOv', '#saveOv', '#loadOv', '#whoOv'].forEach(s => $(s).classList.remove('on')); } });
 
 /* ---------- stats & binder ---------- */
 const owned = () => CARDS.filter(c => S.have[c.id]).length;
@@ -435,6 +459,34 @@ $('#loadGo').onclick = () => {
   if (data.complete) S.complete = true; save(); renderStats(); renderBinder();
   $('#loadMsg').textContent = `Loaded! ${added} new card${added === 1 ? '' : 's'} added to this binder.`; setTimeout(() => $('#loadOv').classList.remove('on'), 1500);
 };
+
+/* ---------- collectors ---------- */
+const curP = () => P.list.find(p => p.id === P.cur);
+function paintWho() { $('#whoName').textContent = curP().name; }
+function renderWho() {
+  $('#whoList').innerHTML = P.list.map(p => { const s = p.id === P.cur ? S : loadS(p.id), n = CARDS.filter(c => s.have[c.id]).length;
+    return `<button data-id="${p.id}" aria-pressed="${p.id === P.cur}"><span>${p.id === P.cur ? '✓ ' : ''}${p.name.replace(/[<>&"]/g, '')}</span><small>${n} of ${CARDS.length} cards · ${s.packs || 0} pack${s.packs === 1 ? '' : 's'}</small></button>`; }).join('');
+  $('#whoList').querySelectorAll('button').forEach(b => b.onclick = () => switchTo(b.dataset.id));
+  $('#whoRen').value = curP().name;
+}
+function switchTo(id) {
+  if (busy) { $('#whoMsg').textContent = 'Finish flipping your cards first!'; return; }
+  save(); P.cur = id; saveP(); S = loadS(id); paintWho(); renderStats();
+  if ($('#binderView').classList.contains('on')) renderBinder();
+  $('#after').hidden = true; $('#pulls').hidden = true; const p = $('#pack'); p.hidden = false; p.classList.remove('ripped'); p.querySelectorAll('*').forEach(e => e.getAnimations().forEach(a => a.cancel())); $('#hint').textContent = 'Tap the pack to rip it open!';
+  renderWho(); $('#whoMsg').textContent = `Now ripping as ${curP().name}.`;
+}
+$('#whoBtn').onclick = () => { $('#whoMsg').textContent = ''; $('#whoNew').value = ''; renderWho(); $('#whoOv').classList.add('on'); };
+$('#whoClose').onclick = () => $('#whoOv').classList.remove('on');
+$('#whoAdd').onclick = () => {
+  const name = $('#whoNew').value.trim().slice(0, 24) || `Collector ${P.list.length + 1}`;
+  if (P.list.some(p => p.name.toLowerCase() === name.toLowerCase())) { $('#whoMsg').textContent = 'That name is already here. Pick it from the list or try another name.'; return; }
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  P.list.push({ id, name }); saveP(); $('#whoNew').value = ''; switchTo(id);
+};
+$('#whoNew').onkeydown = e => { if (e.key === 'Enter') $('#whoAdd').click(); };
+$('#whoRenGo').onclick = () => { const name = $('#whoRen').value.trim().slice(0, 24); if (!name) return; curP().name = name; saveP(); paintWho(); renderWho(); $('#whoMsg').textContent = 'Renamed!'; };
+paintWho();
 
 renderStats();
 if (!S.packs) $('#helpOv').classList.add('on');
