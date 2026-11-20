@@ -217,6 +217,14 @@ body.br-shake > :not(.bigrev):not(.conf):not(.coin){ animation:brShake .9s; }
 .zgrade{ margin:0; font-weight:800; color:#ffe9a8; min-height:1.2em; text-align:center; }
 .revealing .lab .gr b{ display:inline-block; animation:spinG .12s linear infinite; }
 @keyframes spinG{ 50%{ transform:translateY(-3px); } }
+.panel.setp{ width:min(640px, 100%); max-width:none; box-sizing:border-box; max-height:92vh; overflow:auto; }
+.setp *{ box-sizing:border-box; }
+.sh{ margin:0; font-size:18px; color:#ffe9a8; }
+.tbox{ width:100%; display:grid; grid-template-columns:minmax(0, 1fr); gap:10px; } .tbox p{ margin:0; }
+.tnote{ background:rgba(255,200,61,.12); border:2px solid rgba(255,200,61,.45); border-radius:12px; padding:8px 12px; font-weight:700; }
+.trow{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.trow select{ flex:1 1 200px; min-width:0; max-width:100%; border-radius:12px; border:2px solid rgba(255,255,255,.3); background:#24124d; color:#fff; padding:9px 10px; font:inherit; font-weight:800; }
+.tlab{ font-weight:800; color:#d8cdef; }
 .savebar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:2px 0 10px; font-weight:800; font-size:14px; color:#d8cdef; }
 .codebox{ width:100%; font:12px/1.3 ui-monospace, monospace; border-radius:10px; border:2px solid rgba(255,255,255,.25); background:rgba(0,0,0,.35); color:#fff; padding:8px; resize:vertical; word-break:break-all; }
 .row2{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
@@ -256,6 +264,7 @@ body.br-shake > :not(.bigrev):not(.conf):not(.coin){ animation:brShake .9s; }
   <button class="btn" id="whoBtn" aria-haspopup="dialog">👤 <span id="whoName">Collector 1</span></button>
   <button class="btn" id="sndBtn" aria-pressed="true">Sound on</button>
   <button class="btn" id="helpBtn">How it works</button>
+  <button class="btn" id="setBtn" aria-haspopup="dialog" aria-label="Settings">⚙ Settings</button>
 </div>
 
 <section class="view on" id="ripView" role="tabpanel" aria-labelledby="tabRip">
@@ -326,6 +335,24 @@ body.br-shake > :not(.bigrev):not(.conf):not(.coin){ animation:brShake .9s; }
   <div class="whonew"><input id="whoRen" maxlength="24" aria-label="Rename this collector"><button class="btn" id="whoRenGo">Rename me</button></div>
   <p id="whoMsg" role="status" style="min-height:1.2em;font-weight:900;margin:0"></p>
   <button class="btn" id="whoClose">Done</button>
+</div></div>
+<div class="ov" id="setOv" role="dialog" aria-modal="true" aria-labelledby="setT"><div class="panel setp">
+  <h2 id="setT">Settings</h2>
+  <h3 class="sh">Teacher tools</h3>
+  <div id="tLocked" class="tbox">
+    <p>Enter the teacher code to unlock cards for testing.</p>
+    <div class="whonew"><input id="tCode" type="password" autocomplete="off" placeholder="Teacher code" aria-label="Teacher code"><button class="btn primary" id="tGo">Unlock tools</button></div>
+  </div>
+  <div id="tOpen" class="tbox" hidden>
+    <p class="tnote">You're in the <b>Mr. Morris (test)</b> binder. Student binders on this computer aren't touched.</p>
+    <div class="trow"><button class="btn primary" id="tAll">Unlock every card</button><button class="btn" id="tClear">Clear test binder</button></div>
+    <div class="trow"><select id="tSet" aria-label="Pick a set"></select><button class="btn" id="tSetGo">Unlock set</button></div>
+    <div class="trow"><select id="tCard" aria-label="Pick a card"></select><button class="btn" id="tCardGo">Unlock card</button></div>
+    <div class="trow"><span class="tlab">Preview big reveal:</span><button class="btn" data-fx="golden">Golden</button><button class="btn" data-fx="supreme">All Supreme</button><button class="btn" data-fx="diamond">Diamond</button><button class="btn" data-fx="perfect">10 out of 10</button></div>
+    <div class="trow"><button class="btn" id="tTens">Fill showcase with 10s</button><button class="btn" id="tGrade">Finish grading now</button><button class="btn" id="tLock">Lock teacher tools</button></div>
+  </div>
+  <p id="tMsg" role="status" style="min-height:1.2em;font-weight:900;margin:0"></p>
+  <button class="btn" id="setClose">Done</button>
 </div></div>
 <div class="ov" id="helpOv" role="dialog" aria-modal="true" aria-labelledby="helpT"><div class="panel">
   <h2 id="helpT">How Rip City works</h2>
@@ -515,7 +542,7 @@ function done() {
   if (CARDS.filter(c => !isAward(c)).every(c => S.have[c.id]) && !S.complete) { S.complete = true; save(); setTimeout(() => toast('BINDER COMPLETE!', '#c98a00'), 600); }
 }
 $('#againBtn').onclick = () => { $('#after').hidden = true; $('#pulls').hidden = true; const p = $('#pack'); p.hidden = false; p.classList.remove('ripped'); p.querySelectorAll('*').forEach(e => e.getAnimations().forEach(a => a.cancel())); $('#hint').textContent = 'Tap the pack to rip it open!'; p.focus(); };
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { ['#zoomOv', '#helpOv', '#saveOv', '#loadOv', '#whoOv'].forEach(s => $(s).classList.remove('on')); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { ['#zoomOv', '#helpOv', '#saveOv', '#loadOv', '#whoOv', '#setOv'].forEach(s => $(s).classList.remove('on')); } });
 
 /* ---------- stats & binder ---------- */
 const isSecret = c => c.rarity === 'perfect';
@@ -690,6 +717,41 @@ function renderGrade() {
 }
 function confirmCrack(b) { if (b.dataset.sure) return true; b.dataset.sure = '1'; b.textContent = 'Tap again to crack'; setTimeout(() => { if (b.isConnected) { delete b.dataset.sure; b.textContent = 'Crack open'; } }, 2500); return false; }
 $('#zSend').onclick = () => { const c = cardById($('#zSend').dataset.id); if (c) sendToGrade(c); };
+
+/* ---------- settings / teacher tools ---------- */
+const T_HASH = '3e73c0074b4c53ca9b46193417cf73647059a4d703496d2fbd306e9473522bf2';
+const tOn = () => { try { return localStorage.getItem(KEY + '-teacher') === '1'; } catch (e) { return false; } };
+const tMsg = t => { $('#tMsg').textContent = t; };
+async function sha(t) { try { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); } catch (e) { return ''; } }
+function teacherBinder() {
+  if (!P.list.some(p => p.id === 'teacher')) { P.list.push({ id:'teacher', name:'Mr. Morris (test)' }); saveP(); }
+  if (P.cur !== 'teacher') switchTo('teacher');
+}
+function paintSettings() {
+  const on = tOn(); $('#tLocked').hidden = on; $('#tOpen').hidden = !on;
+  if (on && !$('#tSet').options.length) {
+    const sets = [...new Set(CARDS.filter(c => !isAward(c)).map(c => c.group))];
+    $('#tSet').innerHTML = sets.map(s => `<option>${s.replace(/[<>&"]/g, '')}</option>`).join('');
+    $('#tCard').innerHTML = CARDS.map(c => `<option value="${c.id}">${(c.group + ' · ' + c.name).replace(/[<>&"]/g, '')} (${RLABEL[c.rarity]})</option>`).join('');
+  }
+}
+function tRefresh() { save(); renderStats(); if ($('#binderView').classList.contains('on')) renderBinder(); if ($('#gradeView').classList.contains('on')) renderGrade(); }
+$('#setBtn').onclick = () => { tMsg(''); $('#tCode').value = ''; paintSettings(); $('#setOv').classList.add('on'); };
+$('#setClose').onclick = () => $('#setOv').classList.remove('on');
+$('#tGo').onclick = async () => {
+  if (await sha($('#tCode').value.trim().toUpperCase()) !== T_HASH) { tMsg('That code isn’t right.'); return; }
+  try { localStorage.setItem(KEY + '-teacher', '1'); } catch (e) {}
+  teacherBinder(); paintSettings(); tMsg('Teacher tools unlocked! Switched to the test binder.');
+};
+$('#tCode').onkeydown = e => { if (e.key === 'Enter') $('#tGo').click(); };
+$('#tAll').onclick = () => { teacherBinder(); CARDS.forEach(c => { S.have[c.id] = Math.max(S.have[c.id] || 0, 2); }); S.complete = true; tRefresh(); tMsg(`Unlocked all ${CARDS.length} cards (2 of each, so you can test grading).`); };
+$('#tClear').onclick = () => { teacherBinder(); S.have = {}; S.packs = 0; S.pulled = 0; S.graded = []; S.out = []; S.complete = false; tRefresh(); tMsg('Test binder cleared.'); };
+$('#tSetGo').onclick = () => { teacherBinder(); const g = $('#tSet').value; CARDS.filter(c => c.group === g).forEach(c => { S.have[c.id] = S.have[c.id] || 1; }); tRefresh(); $('#setOv').classList.remove('on'); checkDiamonds(); tMsg(`Unlocked every ${g} card.`); };
+$('#tCardGo').onclick = () => { teacherBinder(); const c = cardById($('#tCard').value); if (!c) return; S.have[c.id] = (S.have[c.id] || 0) + 1; tRefresh(); tMsg(`Added ${c.name}.`); };
+document.querySelectorAll('#tOpen [data-fx]').forEach(b => b.onclick = () => { const k = b.dataset.fx; const c = k === 'diamond' ? CARDS.find(x => x.rarity === 'diamond') : CARDS.find(x => x.rarity === k); if (!c) return; $('#setOv').classList.remove('on'); bigReveal(c, k, () => $('#setOv').classList.add('on')); });
+$('#tTens').onclick = () => { teacherBinder(); G(); const pool = CARDS.filter(c => !isAward(c)).sort(() => Math.random() - .5).slice(0, SHOWCASE); S.graded = pool.map((c, i) => ({ id:c.id, cert:String(70000000 + i), grade:10, at:Date.now() })); pool.forEach(c => { S.have[c.id] = S.have[c.id] || 1; }); const pc = CARDS.find(isSecret); if (pc) delete S.have[pc.id]; tRefresh(); $('#setOv').classList.remove('on'); checkPerfect(); };
+$('#tGrade').onclick = () => { teacherBinder(); G(); if (!S.out.length) { tMsg('Nothing is at the grader. Send a double first.'); return; } S.out.forEach(o => o.left = 0); save(); $('#setOv').classList.remove('on'); nextReturn(); };
+$('#tLock').onclick = () => { try { localStorage.removeItem(KEY + '-teacher'); } catch (e) {} paintSettings(); tMsg('Teacher tools locked.'); };
 
 renderStats(); setTimeout(() => { checkPerfect(); checkDiamonds(); nextReturn(); }, 1200);
 if (!S.packs) $('#helpOv').classList.add('on');
